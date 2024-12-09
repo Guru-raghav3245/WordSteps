@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:math';
-import 'home_screen.dart'; // Import to access wordLengthProvider
+import '../screens/home_screen.dart'; // Import to access wordLengthProvider
 
 class WordGameState {
   final String correctWord;

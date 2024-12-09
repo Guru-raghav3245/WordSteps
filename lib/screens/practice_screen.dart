@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'result_screen.dart';
-import 'tts_translator.dart';
-import 'word_generator.dart';
+import '../questions/tts_translator.dart';
+import '../questions/word_generator.dart';
 import 'home_screen.dart';
-import 'pause_modal.dart';
-import 'quit_modal.dart';
+import '../modals/pause_modal.dart';
+import '../modals/quit_modal.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});

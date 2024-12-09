@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'home_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(
@@ -19,8 +19,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Word Guessing Game',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true,
+        colorSchemeSeed: Colors.red,
+        brightness: Brightness.light,
       ),
       home: const HomeScreen(),
     );

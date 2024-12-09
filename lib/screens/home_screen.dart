@@ -13,6 +13,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Word Guessing Game'),
+        backgroundColor: Theme.of(context).colorScheme.primary, // Use theme color
       ),
       body: Center(
         child: Column(
@@ -43,6 +44,7 @@ class HomeScreen extends ConsumerWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary, // Use theme color
                 padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: const TextStyle(fontSize: 20),
               ),
