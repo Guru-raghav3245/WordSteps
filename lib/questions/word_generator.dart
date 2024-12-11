@@ -2,46 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:math';
 import '../screens/home_screen.dart';
-
-class WordGameState {
-  final String correctWord;
-  final List<String> options;
-  final List<String> answeredQuestions;
-  final List<bool> answeredCorrectly;
-  final List<String> userSelectedWords;
-  final int startTime;
-  final int elapsedTime;
-
-  WordGameState({
-    required this.correctWord,
-    required this.options,
-    this.answeredQuestions = const [],
-    this.answeredCorrectly = const [],
-    this.userSelectedWords = const [],
-    int? startTime,
-    this.elapsedTime = 0,
-  }) : startTime = startTime ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-  WordGameState copyWith({
-    String? correctWord,
-    List<String>? options,
-    List<String>? answeredQuestions,
-    List<bool>? answeredCorrectly,
-    List<String>? userSelectedWords,
-    int? startTime,
-    int? elapsedTime,
-  }) {
-    return WordGameState(
-      correctWord: correctWord ?? this.correctWord,
-      options: options ?? this.options,
-      answeredQuestions: answeredQuestions ?? this.answeredQuestions,
-      answeredCorrectly: answeredCorrectly ?? this.answeredCorrectly,
-      userSelectedWords: userSelectedWords ?? this.userSelectedWords,
-      startTime: startTime ?? this.startTime,
-      elapsedTime: elapsedTime ?? this.elapsedTime,
-    );
-  }
-}
+import 'package:word_app/models/word_game_state.dart';
 
 class WordGameService {
   List<String> _getAllWordsOfLength(int length) {
@@ -139,6 +100,17 @@ class WordGameStateNotifier extends StateNotifier<WordGameState> {
         answeredQuestions: [],
         answeredCorrectly: [],
         userSelectedWords: []);
+  }
+
+  void clearGameState() {
+    state = WordGameState(
+      correctWord: '',
+      options: [],
+      answeredQuestions: [],
+      answeredCorrectly: [],
+      userSelectedWords: [],
+      elapsedTime: 0,
+    );
   }
 
   WordGameState getGameResults() {

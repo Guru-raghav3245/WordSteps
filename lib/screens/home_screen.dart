@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'practice_screen.dart';
+import 'practice_screen/practice_screen.dart';
 
-// Provider to manage selected word length
+// New provider to manage game mode
+final gameModeProvider = StateProvider<String>((ref) => 'choose');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
 
 class HomeScreen extends ConsumerWidget {
@@ -13,12 +14,33 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Word Guessing Game'),
-        backgroundColor: Theme.of(context).colorScheme.primary, // Use theme color
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Game Mode Dropdown
+            DropdownButton<String>(
+              value: ref.watch(gameModeProvider),
+              hint: const Text('Select Game Mode'),
+              items: [
+                DropdownMenuItem(
+                  value: 'choose',
+                  child: Text('Choose Mode'),
+                ),
+                DropdownMenuItem(
+                  value: 'speech',
+                  child: Text('Speech Mode'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(gameModeProvider.notifier).state = value;
+                }
+              },
+            ),
+            const SizedBox(height: 20),
             // Word Length Dropdown
             DropdownButton<int>(
               value: ref.watch(wordLengthProvider),
@@ -44,7 +66,7 @@ class HomeScreen extends ConsumerWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.primary, // Use theme color
+                foregroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: const TextStyle(fontSize: 20),
               ),
