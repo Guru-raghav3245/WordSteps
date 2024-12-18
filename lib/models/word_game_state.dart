@@ -31,7 +31,7 @@ class WordGameState {
   }) {
     return WordGameState(
       correctWord: correctWord ?? this.correctWord,
-      options: options ?? this.options,
+      options: options ?? this.options, 
       answeredQuestions: answeredQuestions ?? this.answeredQuestions,
       answeredCorrectly: answeredCorrectly ?? this.answeredCorrectly,
       userSelectedWords: userSelectedWords ?? this.userSelectedWords,

@@ -37,6 +37,13 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
     _initializeSpeech();
   }
 
+  @override
+  void dispose() {
+    // Cancel any ongoing speech recognition
+    _speechRecognitionService.stopListening();
+    super.dispose();
+  }
+
   Future<void> _initializeSpeech() async {
     try {
       await _speechRecognitionService.initializeSpeech();
@@ -48,21 +55,42 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
   void _startSpeechRecognition() async {
     final wordGameState = ref.read(wordGameStateProvider);
 
-    if (!_speechRecognitionService.isListening) {
+    try {
+      if (!_speechRecognitionService.isListening) {
+        setState(() {
+          isListening = true;
+          _recognizedWord = ''; // Clear previous recognition
+        });
+
+        await _speechRecognitionService.startListening(
+          timeout: const Duration(seconds: 10),
+          onResult: (recognizedWord) {
+            if (!mounted) return; // Check if widget is still in the tree
+
+            print('Speech Recognition Result: $recognizedWord');
+
+            setState(() {
+              _recognizedWord = recognizedWord ?? '';
+            });
+
+            if (recognizedWord != null &&
+                recognizedWord.toLowerCase() ==
+                    wordGameState.correctWord.toLowerCase()) {
+              ref
+                  .read(wordGameStateProvider.notifier)
+                  .handleAnswer(recognizedWord);
+            }
+          },
+        );
+      }
+    } catch (e) {
+      if (!mounted) return; // Check if widget is still in the tree
+
+      print('Speech Recognition Exception: $e');
       setState(() {
-        isListening = true;
+        isListening = false;
+        _recognizedWord = 'Error occurred';
       });
-      await _speechRecognitionService.startListening(
-        timeout: const Duration(seconds: 10),
-        onResult: (recognizedWord) {
-          setState(() {
-            _recognizedWord = recognizedWord;
-          });
-          if (recognizedWord == wordGameState.correctWord.toLowerCase()) {
-            ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-          }
-        },
-      );
     }
   }
 
@@ -72,7 +100,7 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Speak Mode'),
+        title: const Text('Speak Mode'),
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -84,31 +112,27 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.volume_up, size: 64),
-              onPressed: () => ref.read(ttsServiceProvider).speak(wordGameState.correctWord, ref),
-            ),
-            const SizedBox(height: 50),
-            ElevatedButton(
-              onPressed: _startSpeechRecognition,
-              child: Text('Start Speaking'),
-            ),
-            Text('You said: $_recognizedWord'),
-            Positioned(
-              bottom: 16,
-              left: 16,
-              child: FloatingActionButton(
-                onPressed: wordGameState.isPaused ? null : widget.pauseTimer,
-                backgroundColor: wordGameState.isPaused ? Colors.grey : null,
-                child: const Icon(Icons.pause),
-              ),
-            ),
-          ],
-        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.volume_up, size: 64),
+            onPressed: () => ref
+                .read(ttsServiceProvider)
+                .speak(wordGameState.correctWord, ref),
+          ),
+          const SizedBox(height: 50),
+          ElevatedButton(
+            onPressed: _startSpeechRecognition,
+            child: const Text('Start Speaking'),
+          ),
+          Text('You said: $_recognizedWord'),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: wordGameState.isPaused ? null : widget.pauseTimer,
+        backgroundColor: wordGameState.isPaused ? Colors.grey : null,
+        child: const Icon(Icons.pause),
       ),
     );
   }

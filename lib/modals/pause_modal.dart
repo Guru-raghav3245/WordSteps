@@ -12,7 +12,7 @@ class PauseDialog extends StatelessWidget {
       title: const Center(
         child: Text(
           'Quiz is Paused',
-          style: TextStyle(color: Color(0xFF009DDC)), // Kumon blue
+          style: TextStyle(color: Colors.red),
         ),
       ),
       actions: <Widget>[
