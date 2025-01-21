@@ -25,8 +25,17 @@ class WordGameService {
       answeredQuestions: previousState?.answeredQuestions ?? [],
       answeredCorrectly: previousState?.answeredCorrectly ?? [],
       userSelectedWords: previousState?.userSelectedWords ?? [],
-      startTime: previousState?.startTime,
+      startTime: previousState?.startTime ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
     );
+  }
+
+  List<String> _generateOptions(String correctWord, List<String> allWords) {
+    List<String> wrongWords =
+        allWords.where((word) => word != correctWord).toList();
+    wrongWords.shuffle();
+    List<String> options = [correctWord, wrongWords[0], wrongWords[1]];
+    options.shuffle();
+    return options;
   }
 
   WordGameState handleAnswer(WordGameState currentState, String selectedWord) {
@@ -46,18 +55,9 @@ class WordGameService {
       elapsedTime: elapsedTime,
     );
   }
-
-  List<String> _generateOptions(String correctWord, List<String> allWords) {
-    List<String> wrongWords =
-        allWords.where((word) => word != correctWord).toList();
-    wrongWords.shuffle();
-    List<String> options = [correctWord, wrongWords[0], wrongWords[1]];
-    options.shuffle();
-    return options;
-  }
 }
 
-// Riverpod Provider for WordGameService
+// Provider for the service
 final wordGameServiceProvider = Provider<WordGameService>((ref) {
   return WordGameService();
 });

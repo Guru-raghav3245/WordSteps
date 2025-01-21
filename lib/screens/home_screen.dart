@@ -1,37 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'practice_screen/practice_screen.dart';
-import 'settings_screen.dart'; // Import the SettingsScreen
+import 'package:word_app/screens/practice_screen/practice_screen.dart';
+import 'settings_screen.dart';
+import 'package:word_app/questions/word_generator.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'choose');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
 
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Word Guessing Game'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Game Mode Dropdown
             DropdownButton<String>(
               value: ref.watch(gameModeProvider),
-              hint: const Text('Select Game Mode'),
               items: [
                 DropdownMenuItem(
                   value: 'choose',
-                  child: Text('Choose Mode'),
+                  child: const Text('Choose Mode'),
                 ),
                 DropdownMenuItem(
                   value: 'speech',
-                  child: Text('Speech Mode'),
+                  child: const Text('Speech Mode'),
                 ),
               ],
               onChanged: (value) {
@@ -41,10 +39,8 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 20),
-            // Word Length Dropdown
             DropdownButton<int>(
               value: ref.watch(wordLengthProvider),
-              hint: const Text('Select Word Length'),
               items: [3, 4, 5, 6, 7, 8, 9].map((length) {
                 return DropdownMenuItem(
                   value: length,
@@ -60,16 +56,15 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
+                // Reset and initialize game state
+                ref.read(wordGameStateProvider.notifier).initializeGame();
+
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PracticeScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const PracticeScreen()),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                textStyle: const TextStyle(fontSize: 20),
-              ),
               child: const Text('Start'),
             ),
             const SizedBox(height: 20),
@@ -77,7 +72,8 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SettingsScreen()),
                 );
               },
               child: const Text('Settings'),
