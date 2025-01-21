@@ -5,9 +5,9 @@ import 'package:word_app/screens/result_screen.dart';
 import '/modals/pause_modal.dart';
 import '/modals/quit_modal.dart';
 import '/questions/word_generator.dart';
-import 'package:word_app/screens/home_screen.dart';
 import 'speech_mode_screen.dart';
 import 'package:word_app/questions/tts_translator.dart';
+import 'package:word_app/screens/home_screen.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
@@ -73,7 +73,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       builder: (BuildContext context) {
         return QuitDialog(
           onQuit: () {
-            // Cancel timer and reset game state
             _timer.cancel();
             ref.read(wordGameStateProvider.notifier).quitGame();
             Navigator.of(context).popUntil((route) => route.isFirst);
@@ -84,7 +83,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   }
 
   void _endQuiz() {
-    // Cancel the timer and get the game state
     _timer.cancel();
     final gameState = ref.read(wordGameStateProvider);
     Navigator.pushReplacement(
@@ -161,7 +159,8 @@ class ChooseModeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Choose Mode'),
+        title: const Text('Choose Mode'),
+        backgroundColor: Colors.blueAccent,
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -182,50 +181,74 @@ class ChooseModeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          wordGameState.isPaused
-              ? const Center(
-                  child: Text(
-                    'Game Paused',
-                    style: TextStyle(fontSize: 24, color: Colors.grey),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.lightBlueAccent, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (wordGameState.isPaused)
+                const Text(
+                  'Game Paused',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
                   ),
                 )
-              : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.volume_up, size: 64),
-                        onPressed: () =>
-                            ref.read(ttsServiceProvider).speak(wordGameState.correctWord, ref),
-                      ),
-                      const SizedBox(height: 50),
-                      Column(
-                        children: wordGameState.options.map((word) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: ElevatedButton(
-                              onPressed: () => ref.read(wordGameStateProvider.notifier).handleAnswer(word),
-                              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
-                              child: Text(word),
+              else
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.volume_up, size: 64),
+                      color: Colors.deepOrange,
+                      onPressed: () => ref
+                          .read(ttsServiceProvider)
+                          .speak(wordGameState.correctWord, ref),
+                    ),
+                    const SizedBox(height: 30),
+                    ...wordGameState.options.map((word) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              ref.read(wordGameStateProvider.notifier).handleAnswer(word),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            minimumSize: const Size(200, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+                          ),
+                          child: Text(
+                            word,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
                 ),
-          Positioned(
-            bottom: 16,
-            left: 16,
-            child: FloatingActionButton(
-              onPressed: wordGameState.isPaused ? null : pauseTimer,
-              backgroundColor: wordGameState.isPaused ? Colors.grey : null,
-              child: const Icon(Icons.pause),
-            ),
+              const SizedBox(height: 20),
+              FloatingActionButton(
+                onPressed: wordGameState.isPaused ? null : pauseTimer,
+                backgroundColor: wordGameState.isPaused ? Colors.grey : Colors.redAccent,
+                child: const Icon(Icons.pause),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

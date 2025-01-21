@@ -29,7 +29,7 @@ class SettingsScreen extends ConsumerWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF009DDC)),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFFE53935)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -59,12 +59,12 @@ class SettingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF009DDC).withOpacity(0.1),
+                          color: const Color(0xFFE53935).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.settings_voice,
-                          color: Color(0xFF009DDC),
+                          color: Color(0xFFE53935),
                           size: 24,
                         ),
                       ),
@@ -131,12 +131,12 @@ class SettingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF009DDC).withOpacity(0.1),
+                          color: const Color(0xFFE53935).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.mic,
-                          color: Color(0xFF009DDC),
+                          color: Color(0xFFE53935),
                           size: 24,
                         ),
                       ),
@@ -156,12 +156,12 @@ class SettingsScreen extends ConsumerWidget {
                     height: 56,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF009DDC), Color(0xFF0077C2)],
+                        colors: [Color(0xFFE53935), Color(0xFFD32F2F)],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF009DDC).withOpacity(0.3),
+                          color: const Color(0xFFE53935).withOpacity(0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -225,12 +225,12 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF009DDC).withOpacity(0.1),
+                color: const Color(0xFFE53935).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: const Color(0xFF009DDC),
+                color: const Color(0xFFE53935),
                 size: 20,
               ),
             ),
@@ -247,7 +247,7 @@ class SettingsScreen extends ConsumerWidget {
               width: 56,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF009DDC).withOpacity(0.1),
+                color: const Color(0xFFE53935).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -255,7 +255,7 @@ class SettingsScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF009DDC),
+                      color: const Color(0xFFE53935),
                     ),
               ),
             ),
@@ -279,8 +279,8 @@ class SettingsScreen extends ConsumerWidget {
             max: 1.5,
             divisions: 20,
             onChanged: onChanged,
-            activeColor: const Color(0xFF009DDC),
-            inactiveColor: const Color(0xFF009DDC).withOpacity(0.2),
+            activeColor: const Color(0xFFE53935),
+            inactiveColor: const Color(0xFFE53935).withOpacity(0.2),
           ),
         ),
       ],
