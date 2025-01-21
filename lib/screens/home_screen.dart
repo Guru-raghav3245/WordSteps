@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'practice_screen/practice_screen.dart';
+import 'settings_screen.dart'; // Import the SettingsScreen
 
-// New provider to manage game mode
 final gameModeProvider = StateProvider<String>((ref) => 'choose');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
 
@@ -71,6 +71,16 @@ class HomeScreen extends ConsumerWidget {
                 textStyle: const TextStyle(fontSize: 20),
               ),
               child: const Text('Start'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              },
+              child: const Text('Settings'),
             ),
           ],
         ),

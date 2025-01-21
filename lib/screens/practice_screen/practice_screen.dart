@@ -102,14 +102,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       ),
     );
   }
-
-  // Format time as MM:SS
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     final gameMode = ref.watch(gameModeProvider);

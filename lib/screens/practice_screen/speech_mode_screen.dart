@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/widgets/speech_recog.dart';
-import '/widgets/tts_translator.dart';
+import '../../questions/speech_recog.dart';
+import '../../questions/tts_translator.dart';
 import '/questions/word_generator.dart';
 
 class SpeakModeScreen extends ConsumerStatefulWidget {
@@ -70,12 +70,11 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
             print('Speech Recognition Result: $recognizedWord');
 
             setState(() {
-              _recognizedWord = recognizedWord ?? '';
+              _recognizedWord = recognizedWord;
             });
 
-            if (recognizedWord != null &&
-                recognizedWord.toLowerCase() ==
-                    wordGameState.correctWord.toLowerCase()) {
+            if (recognizedWord.toLowerCase() ==
+                wordGameState.correctWord.toLowerCase()) {
               ref
                   .read(wordGameStateProvider.notifier)
                   .handleAnswer(recognizedWord);

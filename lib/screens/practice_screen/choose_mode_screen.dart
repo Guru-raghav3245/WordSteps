@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '/widgets/tts_translator.dart';
+import '../../questions/tts_translator.dart';
 import '/questions/word_generator.dart';
 
 class ChooseModeScreen extends ConsumerWidget {
