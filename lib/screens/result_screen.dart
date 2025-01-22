@@ -5,7 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:share_plus/share_plus.dart'; // Add this import
+import 'package:share_plus/share_plus.dart';
 
 class ResultScreen extends ConsumerStatefulWidget {
   final List<String> answeredQuestions;
@@ -66,34 +66,30 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
   }
 
   Future<void> _sharePDFReport() async {
-  try {
-    // Generate the detailed PDF using the QuizPDFGenerator class
-    final file = await QuizPDFGenerator.generateQuizPDF(
-      answeredQuestions: widget.answeredQuestions,
-      userAnswers: widget.userSelectedWords,
-      answeredCorrectly: widget.answeredCorrectly,
-      totalTime: widget.totalTime,
-    );
-
-    // Use SharePlus to share the PDF file
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Word Game Quiz Results',
-      text: 'Check out my quiz results! Attached is the detailed report.',
-    );
-  } catch (e) {
-    // Handle any errors during PDF generation or sharing
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error sharing PDF: ${e.toString()}'),
-          backgroundColor: Colors.red.shade700, // Darker red for better contrast
-        ),
+    try {
+      final file = await QuizPDFGenerator.generateQuizPDF(
+        answeredQuestions: widget.answeredQuestions,
+        userAnswers: widget.userSelectedWords,
+        answeredCorrectly: widget.answeredCorrectly,
+        totalTime: widget.totalTime,
       );
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Word Game Quiz Results',
+        text: 'Check out my quiz results! Attached is the detailed report.',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing PDF: ${e.toString()}'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +97,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
     int minutes = widget.totalTime ~/ 60;
     int seconds = widget.totalTime % 60;
 
-    int correctAnswers =
-        widget.answeredCorrectly.where((correct) => correct).length;
+    int correctAnswers = widget.answeredCorrectly.where((correct) => correct).length;
 
     return WillPopScope(
       onWillPop: () async {
@@ -114,7 +109,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
         body: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -162,7 +157,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
                 ),
               ),
               const SizedBox(height: 30),
+              LinearProgressIndicator(
+                value: correctAnswers / widget.answeredQuestions.length,
+                backgroundColor: theme.colorScheme.secondary,
+                color: Colors.green,
+              ),
+              const SizedBox(height: 20),
               Expanded(
+                flex: 3, // Increase the flex value to give more vertical space
                 child: widget.answeredQuestions.isEmpty
                     ? Center(
                         child: FadeTransition(
@@ -179,47 +181,50 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
                       )
                     : SlideTransition(
                         position: _slideAnimation,
-                        child: ListView.separated(
+                        child: ListView.builder(
                           itemCount: widget.answeredQuestions.length,
-                          separatorBuilder: (context, index) =>
-                              const Divider(),
                           itemBuilder: (context, index) {
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor:
-                                    widget.answeredCorrectly[index]
+                            // Removed filter logic
+                            return Column(
+                              children: [
+                                ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: widget.answeredCorrectly[index]
                                         ? theme.colorScheme.primary
-                                        : Colors.red,
-                                child: Text(
-                                  (index + 1).toString(),
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.onPrimary,
-                                    fontWeight: FontWeight.bold,
+                                        : Colors.red[600],
+                                    child: Text(
+                                      (index + 1).toString(),
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    'Correct Word: ${widget.answeredQuestions[index]}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    'Selected Word: ${widget.userSelectedWords[index]}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: widget.answeredCorrectly[index]
+                                          ? Colors.green
+                                          : Colors.red[700],  // Improved red color for incorrect answers
+                                    ),
                                   ),
                                 ),
-                              ),
-                              title: Text(
-                                'Correct Word: ${widget.answeredQuestions[index]}',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Selected Word: ${widget.userSelectedWords[index]}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: widget.answeredCorrectly[index]
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                              ),
+                                const Divider(), // Always show divider
+                              ],
                             );
                           },
                         ),
                       ),
               ),
               const SizedBox(height: 30),
-              FadeTransition(
-                opacity: _fadeAnimation,
+              Semantics(
+                label: 'Go to Start Screen Button',
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.home, color: Colors.white),
                   onPressed: _handleExit,
@@ -267,7 +272,6 @@ class QuizPDFGenerator {
   }) async {
     final pdf = pw.Document();
     
-    // Calculate statistics
     final correctAnswers = answeredCorrectly.where((correct) => correct).length;
     final wrongAnswers = answeredCorrectly.where((correct) => !correct).length;
     final totalQuestions = answeredQuestions.length;
@@ -281,7 +285,6 @@ class QuizPDFGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         build: (context) => [
-          // Header
           pw.Header(
             level: 0,
             child: pw.Column(
@@ -303,8 +306,6 @@ class QuizPDFGenerator {
               ],
             ),
           ),
-
-          // Summary Section
           pw.Container(
             padding: const pw.EdgeInsets.all(10),
             margin: const pw.EdgeInsets.symmetric(vertical: 20),
@@ -339,8 +340,6 @@ class QuizPDFGenerator {
               ],
             ),
           ),
-
-          // Questions Section
           pw.Header(
             level: 1,
             text: 'Detailed Questions & Answers',
@@ -349,98 +348,48 @@ class QuizPDFGenerator {
               fontWeight: pw.FontWeight.bold,
             ),
           ),
-          pw.SizedBox(height: 10),
-
-          ...List.generate(answeredQuestions.length, (index) {
-            return pw.Container(
-              margin: const pw.EdgeInsets.only(bottom: 10),
-              padding: const pw.EdgeInsets.all(10),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(
-                  color: answeredCorrectly[index] 
-                      ? PdfColors.green 
-                      : PdfColors.red,
-                  width: 0.5,
-                ),
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
-              ),
-              child: pw.Column(
+          pw.ListView.builder(
+            itemCount: answeredQuestions.length,
+            itemBuilder: (context, index) {
+              return pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Row(
-                    children: [
-                      pw.Container(
-                        width: 24,
-                        height: 24,
-                        decoration: pw.BoxDecoration(
-                          color: answeredCorrectly[index] 
-                              ? PdfColors.green 
-                              : PdfColors.red,
-                          shape: pw.BoxShape.circle,
-                        ),
-                        alignment: pw.Alignment.center,
-                        child: pw.Text(
-                          (index + 1).toString(),
-                          style: pw.TextStyle(
-                            color: PdfColors.white,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      pw.SizedBox(width: 10),
-                      pw.Text(
-                        'Question: ${answeredQuestions[index]}',
-                        style: const pw.TextStyle(fontSize: 12),
-                      ),
-                    ],
+                  pw.Text(
+                    'Q${index + 1}: ${answeredQuestions[index]}',
+                    style: pw.TextStyle(fontSize: 16),
                   ),
-                  pw.SizedBox(height: 5),
                   pw.Text(
                     'Your Answer: ${userAnswers[index]}',
-                    style: const pw.TextStyle(fontSize: 12),
-                  ),
-                  pw.Text(
-                    'Correct: ${answeredCorrectly[index] ? 'Yes' : 'No'}',
                     style: pw.TextStyle(
-                      fontSize: 12,
-                      color: answeredCorrectly[index] 
-                          ? PdfColors.green 
-                          : PdfColors.red,
+                      fontSize: 14,
+                      color: answeredCorrectly[index]
+                          ? PdfColors.green
+                          : PdfColors.red,  // Adjusted red color
                     ),
                   ),
+                  pw.Divider(),
                 ],
-              ),
-            );
-          }),
+              );
+            },
+          ),
         ],
       ),
     );
 
-    // Save the PDF
-    final output = await getTemporaryDirectory();
-    final file = File('${output.path}/quiz_results.pdf');
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/quiz_report.pdf');
     await file.writeAsBytes(await pdf.save());
     return file;
   }
 
   static pw.Widget _buildSummaryItem(String label, String value) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+    return pw.Row(
       children: [
         pw.Text(
-          label,
-          style: const pw.TextStyle(
-            color: PdfColors.grey700,
-            fontSize: 12,
-          ),
+          '$label: ',
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
         ),
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            fontSize: 14,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
+        pw.Text(value),
       ],
     );
   }

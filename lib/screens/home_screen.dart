@@ -20,19 +20,7 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
-              );
-            },
-          ),
-        ],
+       
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
@@ -74,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
               context,
               title: 'Word Length',
               value: ref.watch(wordLengthProvider),
-              items: [3, 4, 5, 6, 7, 8, 9].map((length) {
+              items: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((length) {
                 return DropdownMenuItem(
                   value: length,
                   child: Text('$length Letter Words'),
