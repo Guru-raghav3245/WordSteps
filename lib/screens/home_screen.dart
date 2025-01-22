@@ -20,6 +20,19 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
@@ -155,21 +168,30 @@ class HomeScreen extends ConsumerWidget {
     required List<Color> gradientColors,
   }) {
     return SizedBox(
-      width: double.infinity,
+      width: MediaQuery.of(context).size.width * 0.7, // 70% of screen width
+      height: 60, // Increased height
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
+          padding: EdgeInsets.zero, // Remove default padding
         ),
         child: Ink(
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: gradientColors),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: gradientColors.last.withOpacity(0.4),
+                blurRadius: 10,
+                spreadRadius: 1,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
           child: Container(
             alignment: Alignment.center,
@@ -177,8 +199,8 @@ class HomeScreen extends ConsumerWidget {
               label,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),

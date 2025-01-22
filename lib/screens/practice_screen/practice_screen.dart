@@ -445,7 +445,7 @@ class _ChooseModeScreenState extends ConsumerState<ChooseModeScreen> {
 
   void _speakNextWord() {
     Future.delayed(
-      const Duration(milliseconds: 500),
+      const Duration(milliseconds: 0),
       () {
         final word = ref.read(wordGameStateProvider).correctWord;
         if (word.isNotEmpty) {
