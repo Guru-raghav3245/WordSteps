@@ -8,6 +8,7 @@ import '/questions/word_generator.dart';
 import 'speech_mode_screen.dart';
 import 'package:word_app/questions/tts_translator.dart';
 import 'package:word_app/screens/home_screen.dart';
+import 'confetti_helper.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
@@ -137,7 +138,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   }
 }
 
-class ChooseModeScreen extends ConsumerWidget {
+class ChooseModeScreen extends ConsumerStatefulWidget {
   final int elapsedTime;
   final VoidCallback pauseTimer;
   final VoidCallback resumeTimer;
@@ -154,7 +155,26 @@ class ChooseModeScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChooseModeScreen> createState() => _ChooseModeScreenState();
+}
+
+class _ChooseModeScreenState extends ConsumerState<ChooseModeScreen> {
+  late final ConfettiManager confettiManager;
+
+  @override
+  void initState() {
+    super.initState();
+    confettiManager = ConfettiManager();
+  }
+
+  @override
+  void dispose() {
+    confettiManager.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final wordGameState = ref.watch(wordGameStateProvider);
 
     return Scaffold(
@@ -166,89 +186,111 @@ class ChooseModeScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(8.0),
             child: Center(
               child: Text(
-                '${elapsedTime ~/ 60}:${(elapsedTime % 60).toString().padLeft(2, '0')}',
+                '${widget.elapsedTime ~/ 60}:${(widget.elapsedTime % 60).toString().padLeft(2, '0')}',
                 style: const TextStyle(fontSize: 18),
               ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.exit_to_app),
-            onPressed: showQuitDialog,
+            onPressed: widget.showQuitDialog,
           ),
           IconButton(
             icon: const Icon(Icons.check),
-            onPressed: endQuiz,
+            onPressed: widget.endQuiz,
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.lightBlueAccent, Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (wordGameState.isPaused)
-                const Text(
-                  'Game Paused',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
-                )
-              else
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.volume_up, size: 64),
-                      color: Colors.deepOrange,
-                      onPressed: () => ref
-                          .read(ttsServiceProvider)
-                          .speak(wordGameState.correctWord, ref),
-                    ),
-                    const SizedBox(height: 30),
-                    ...wordGameState.options.map((word) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              ref.read(wordGameStateProvider.notifier).handleAnswer(word),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            minimumSize: const Size(200, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            word,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                ),
-              const SizedBox(height: 20),
-              FloatingActionButton(
-                onPressed: wordGameState.isPaused ? null : pauseTimer,
-                backgroundColor: wordGameState.isPaused ? Colors.grey : Colors.redAccent,
-                child: const Icon(Icons.pause),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.lightBlueAccent, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-            ],
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (wordGameState.isPaused)
+                    const Text(
+                      'Game Paused',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    )
+                  else
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.volume_up, size: 64),
+                          color: Colors.deepOrange,
+                          onPressed: () => ref
+                              .read(ttsServiceProvider)
+                              .speak(wordGameState.correctWord, ref),
+                        ),
+                        const SizedBox(height: 30),
+                        ...wordGameState.options.map((word) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (word == wordGameState.correctWord) {
+                                  confettiManager.correctConfettiController.play();
+                                } else {
+                                  confettiManager.wrongConfettiController.play();
+                                }
+                                ref.read(wordGameStateProvider.notifier).handleAnswer(word);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                minimumSize: const Size(200, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                word,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  const SizedBox(height: 20),
+                  FloatingActionButton(
+                    onPressed: wordGameState.isPaused ? null : widget.pauseTimer,
+                    backgroundColor: wordGameState.isPaused ? Colors.grey : Colors.redAccent,
+                    child: const Icon(Icons.pause),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+          IgnorePointer(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: confettiManager.buildCorrectConfetti(),
+            ),
+          ),
+          IgnorePointer(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: confettiManager.buildWrongConfetti(),
+            ),
+          ),
+        ],
       ),
     );
   }
