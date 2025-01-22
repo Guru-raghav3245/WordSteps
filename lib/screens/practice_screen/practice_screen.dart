@@ -173,108 +173,209 @@ class _ChooseModeScreenState extends ConsumerState<ChooseModeScreen> {
     super.dispose();
   }
 
+  String formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final wordGameState = ref.watch(wordGameStateProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Choose Mode'),
-        backgroundColor: Colors.blueAccent,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Choose Mode',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.red.shade600,
+        elevation: 0,
         actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Center(
               child: Text(
-                '${widget.elapsedTime ~/ 60}:${(widget.elapsedTime % 60).toString().padLeft(2, '0')}',
-                style: const TextStyle(fontSize: 18),
+                formatTime(widget.elapsedTime),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.exit_to_app),
+            icon: const Icon(Icons.exit_to_app, color: Colors.white),
+            iconSize: 28,
             onPressed: widget.showQuitDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.check),
+            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+            iconSize: 28,
             onPressed: widget.endQuiz,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.lightBlueAccent, Colors.white],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
+                colors: [
+                  Colors.red.shade600,
+                  Colors.red.shade100,
+                  Colors.white,
+                ],
               ),
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (wordGameState.isPaused)
-                    const Text(
-                      'Game Paused',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    )
-                  else
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.volume_up, size: 64),
-                          color: Colors.deepOrange,
-                          onPressed: () => ref
-                              .read(ttsServiceProvider)
-                              .speak(wordGameState.correctWord, ref),
+            child: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      const Spacer(),
+                      if (!wordGameState.isPaused) ...[
+                        Container(
+                          width:  MediaQuery.of(context).size.width * 0.9,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.volume_up),
+                                  iconSize: 70,
+                                  color: Colors.red.shade700,
+                                  onPressed: () => ref
+                                      .read(ttsServiceProvider)
+                                      .speak(wordGameState.correctWord, ref),
+                                ),
+                              ),
+                              const SizedBox(height: 50),
+                              ...wordGameState.options.map((word) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      // Handle the selected answer
+                                      if (word == wordGameState.correctWord) {
+                                        confettiManager
+                                            .correctConfettiController
+                                            .play();
+                                      } else {
+                                        confettiManager.wrongConfettiController
+                                            .play();
+                                      }
+                                      ref
+                                          .read(wordGameStateProvider.notifier)
+                                          .handleAnswer(word);
+
+                                      // Automatically speak the next word
+                                      Future.delayed(
+                                          const Duration(milliseconds: 500),
+                                          () {
+                                        if (ref
+                                            .read(wordGameStateProvider)
+                                            .correctWord
+                                            .isNotEmpty) {
+                                          ref.read(ttsServiceProvider).speak(
+                                              ref
+                                                  .read(wordGameStateProvider)
+                                                  .correctWord,
+                                              ref);
+                                        }
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.red.shade700,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      elevation: 3,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                        side: BorderSide(
+                                            color: Colors.red.shade200),
+                                      ),
+                                      minimumSize: const Size(double.infinity, 48),
+                                    ),
+                                    child: Text(
+                                      word,
+                                      style: TextStyle(
+                                        fontSize: 25,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 30),
-                        ...wordGameState.options.map((word) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                if (word == wordGameState.correctWord) {
-                                  confettiManager.correctConfettiController.play();
-                                } else {
-                                  confettiManager.wrongConfettiController.play();
-                                }
-                                ref.read(wordGameStateProvider.notifier).handleAnswer(word);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                minimumSize: const Size(200, 50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: Text(
-                                word,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
+                      ] else
+                        const Center(
+                          child: Text(
+                            'Game Paused',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                          );
-                        }),
-                      ],
-                    ),
-                  const SizedBox(height: 20),
-                  FloatingActionButton(
-                    onPressed: wordGameState.isPaused ? null : widget.pauseTimer,
-                    backgroundColor: wordGameState.isPaused ? Colors.grey : Colors.redAccent,
-                    child: const Icon(Icons.pause),
+                          ),
+                        ),
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 32),
+                        child: FloatingActionButton(
+                          onPressed:
+                              wordGameState.isPaused ? null : widget.pauseTimer,
+                          backgroundColor: wordGameState.isPaused
+                              ? Colors.grey
+                              : Colors.red.shade700,
+                          elevation: 4,
+                          child: Icon(
+                            wordGameState.isPaused
+                                ? Icons.play_arrow
+                                : Icons.pause,
+                            size: 48,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
