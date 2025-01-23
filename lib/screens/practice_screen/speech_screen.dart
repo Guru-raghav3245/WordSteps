@@ -304,11 +304,21 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
         color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(15),
       ),
-      child: IconButton(
+      child: /*IconButton(
         icon: const Icon(Icons.volume_up),
         iconSize: 70,
         color: Colors.red.shade700,
         onPressed: () => _speakWord(ref.read(wordGameStateProvider).correctWord),
+      ),*/
+      Center(
+        child: Text(
+          ref.read(wordGameStateProvider).correctWord,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.red.shade700,
+          ),
+        ),
       ),
     );
   }
