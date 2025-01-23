@@ -4,7 +4,7 @@ import 'package:word_app/screens/practice_screen/practice_screen.dart';
 import 'settings_screen.dart';
 import 'package:word_app/questions/word_generator.dart';
 
-final gameModeProvider = StateProvider<String>((ref) => 'choose');
+final gameModeProvider = StateProvider<String>((ref) => 'read');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
 
 class HomeScreen extends ConsumerWidget {
@@ -43,12 +43,12 @@ class HomeScreen extends ConsumerWidget {
               value: ref.watch(gameModeProvider),
               items: const [
                 DropdownMenuItem(
-                  value: 'choose',
-                  child: Text('Choose Mode'),
+                  value: 'read',
+                  child: Text('Listen Mode'),
                 ),
                 DropdownMenuItem(
-                  value: 'speech',
-                  child: Text('Speech Mode'),
+                  value: 'listen',
+                  child: Text('Read Mode'),
                 ),
               ],
               onChanged: (value) {
