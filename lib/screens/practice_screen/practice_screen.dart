@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:word_app/screens/result_screen.dart';
+import 'package:word_app/screens/result_screen/result_screen.dart';
 import '/modals/pause_modal.dart';
 import '/modals/quit_modal.dart';
 import '/questions/word_generator.dart';
-import 'speech_mode_screen.dart';
+import 'speech_screen.dart';
 import 'package:word_app/screens/home_screen.dart';
-import 'choose_mode_screen.dart';
+import 'choose_screen.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
