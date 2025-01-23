@@ -24,7 +24,8 @@ class ResultScreen extends ConsumerStatefulWidget {
   _ResultScreenState createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerProviderStateMixin {
+class _ResultScreenState extends ConsumerState<ResultScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -88,88 +89,143 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
     }
   }
 
+  Widget _buildStatsCard(BuildContext context) {
+  int minutes = widget.totalTime ~/ 60;
+  int seconds = widget.totalTime % 60;
+  
+  // Prevent division by zero and handle empty list scenarios
+  int totalQuestions = widget.answeredQuestions.length;
+  int correctAnswers = widget.answeredCorrectly.where((correct) => correct).length;
+  
+  // Ensure safe division by using max to prevent division by zero
+  double progressValue = totalQuestions > 0 
+    ? correctAnswers / totalQuestions 
+    : 0.0;
+
+  return Container(
+    width: MediaQuery.of(context).size.width * 0.9, // Limit width
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min, // Prevent overflow
+      children: [
+        _buildStatRow('Time Taken', '$minutes:${seconds.toString().padLeft(2, '0')}'),
+        const Divider(height: 20, color: Colors.black12),
+        _buildStatRow('Questions Attended', '$totalQuestions'),
+        const Divider(height: 20, color: Colors.black12),
+        _buildStatRow('Correct Answers', '$correctAnswers'),
+        const SizedBox(height: 10),
+        LinearProgressIndicator(
+          value: progressValue, // Use safe value
+          backgroundColor: Colors.red.shade100,
+          color: Colors.green,
+          minHeight: 8,
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildStatRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback onPressed,
+    required List<Color> gradientColors,
+    required IconData icon,
+  }) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.7,
+      height: 60,
+      child: ElevatedButton.icon(
+          icon: Icon(icon, color: Colors.white),
+          label: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: Colors.white,
+            shadowColor: Colors.transparent,
+            padding: EdgeInsets.zero,
+          ),
+          iconAlignment: IconAlignment.start),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    int minutes = widget.totalTime ~/ 60;
-    int seconds = widget.totalTime % 60;
-
-    int correctAnswers = widget.answeredCorrectly.where((correct) => correct).length;
-
     return WillPopScope(
       onWillPop: () async {
         await _handleExit();
         return true;
       },
       child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.red,
+          title: const Text(
+            'Quiz Results',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          centerTitle: true,
+        ),
         body: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Text(
-                  'Quiz Results',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              _buildStatsCard(context),
               const SizedBox(height: 30),
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    Text(
-                      'Time Taken: $minutes:${seconds.toString().padLeft(2, '0')}',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Questions Attended: ${widget.answeredQuestions.length}',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Correct Answers: $correctAnswers',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-              LinearProgressIndicator(
-                value: correctAnswers / widget.answeredQuestions.length,
-                backgroundColor: theme.colorScheme.secondary,
-                color: Colors.green,
-              ),
-              const SizedBox(height: 20),
               Expanded(
-                flex: 3, // Increase the flex value to give more vertical space
+                flex: 3,
                 child: widget.answeredQuestions.isEmpty
                     ? Center(
                         child: FadeTransition(
                           opacity: _fadeAnimation,
                           child: Text(
                             'No questions attended',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.error,
+                            style: TextStyle(
+                              color: Colors.red[700],
                               fontSize: 20,
                               fontStyle: FontStyle.italic,
                             ),
@@ -179,78 +235,61 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
                     : SlideTransition(
                         position: _slideAnimation,
                         child: ListView.builder(
+                          // Add a null check to prevent potential issues
                           itemCount: widget.answeredQuestions.length,
                           itemBuilder: (context, index) {
-                            // Removed filter logic
-                            return Column(
-                              children: [
-                                ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: widget.answeredCorrectly[index]
-                                        ? theme.colorScheme.primary
-                                        : Colors.red[600],
-                                    child: Text(
-                                      (index + 1).toString(),
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: theme.colorScheme.onPrimary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    'Correct Word: ${widget.answeredQuestions[index]}',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    'Selected Word: ${widget.userSelectedWords[index]}',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: widget.answeredCorrectly[index]
+                            // Also add null checks for accessing lists
+                            return Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      widget.answeredCorrectly[index]
                                           ? Colors.green
-                                          : Colors.red[700],  // Improved red color for incorrect answers
+                                          : Colors.red[600],
+                                  child: Text(
+                                    (index + 1).toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
-                                const Divider(), // Always show divider
-                              ],
+                                title: Text(
+                                  'Correct Word: ${widget.answeredQuestions[index]}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Selected Word: ${widget.userSelectedWords[index]}',
+                                  style: TextStyle(
+                                    color: widget.answeredCorrectly[index]
+                                        ? Colors.green[700]
+                                        : Colors.red[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             );
                           },
                         ),
                       ),
               ),
-              const SizedBox(height: 30),
-              Semantics(
-                label: 'Go to Start Screen Button',
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.home, color: Colors.white),
-                  onPressed: _handleExit,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12.0, horizontal: 24.0),
-                    backgroundColor: theme.colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  label: const Text(
-                    'Go to Start Screen',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
+              const SizedBox(height: 15),
+              _buildActionButton(
+                label: 'Go to Start Screen',
+                onPressed: _handleExit,
+                gradientColors: [Colors.red, Colors.deepOrange],
+                icon: Icons.home,
               ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.share, color: Colors.white),
+              const SizedBox(height: 15),
+              _buildActionButton(
+                label: 'Share Report',
                 onPressed: _sharePDFReport,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                label: const Text('Share Report'),
+                gradientColors: [Colors.green, Colors.lightGreen],
+                icon: Icons.share,
               ),
             ],
           ),
@@ -259,4 +298,3 @@ class _ResultScreenState extends ConsumerState<ResultScreen> with SingleTickerPr
     );
   }
 }
-
