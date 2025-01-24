@@ -92,8 +92,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
                   .read(wordGameStateProvider.notifier)
                   .handleAnswer(recognizedWord);
               _speakNextWord();
-            } else {
-              confettiManager.wrongConfettiController.play();
             }
           },
         );

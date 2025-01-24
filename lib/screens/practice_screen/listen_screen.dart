@@ -295,8 +295,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
   void _handleWordSelection(String word) {
     if (word == ref.read(wordGameStateProvider).correctWord) {
       confettiManager.correctConfettiController.play();
-    } else {
-      confettiManager.wrongConfettiController.play();
     }
     
     ref.read(wordGameStateProvider.notifier).handleAnswer(word);
