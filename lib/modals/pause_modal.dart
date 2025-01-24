@@ -8,23 +8,54 @@ class PauseDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.black,
-      title: const Center(
-        child: Text(
-          'Quiz is Paused',
-          style: TextStyle(color: Colors.red),
-        ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // Rounded corners for the dialog
+      ),
+      backgroundColor: Colors.black.withOpacity(0.8), // Slight opacity for a softer background
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(
+            Icons.pause_circle_filled, // Add a pause icon for visual context
+            color: Colors.red,
+            size: 40,
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Quiz is Paused',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+      content: const Text(
+        'You can resume your quiz anytime.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white70),
       ),
       actions: <Widget>[
         Center(
-          child: TextButton(
+          child: ElevatedButton(
             onPressed: () {
-              //Navigator.pop(context); // Close the dialog
               onResume(); // Call the resume callback
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: const Text(
               'Resume Quiz',
-              style: TextStyle(color: Colors.green),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
           ),
         ),

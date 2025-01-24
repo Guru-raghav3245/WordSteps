@@ -88,11 +88,11 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             if (recognizedWord.toLowerCase() ==
                 wordGameState.correctWord.toLowerCase()) {
               confettiManager.correctConfettiController.play();
-              ref
-                  .read(wordGameStateProvider.notifier)
-                  .handleAnswer(recognizedWord);
-              _speakNextWord();
             }
+            ref
+                .read(wordGameStateProvider.notifier)
+                .handleAnswer(_recognizedWord);
+            _speakNextWord();
           },
         );
       }
