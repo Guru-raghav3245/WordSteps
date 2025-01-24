@@ -20,19 +20,19 @@ class GameScreenProps {
   });
 }
 
-class ChooseModeScreen extends ConsumerStatefulWidget {
+class ListenModeScreen extends ConsumerStatefulWidget {
   final GameScreenProps props;
 
-  const ChooseModeScreen({
+  const ListenModeScreen({
     super.key,
     required this.props,
   });
 
   @override
-  ConsumerState<ChooseModeScreen> createState() => _ChooseModeScreenState();
+  ConsumerState<ListenModeScreen> createState() => _ListenModeScreenState();
 }
 
-class _ChooseModeScreenState extends ConsumerState<ChooseModeScreen> {
+class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
   late final ConfettiManager confettiManager;
 
   @override
@@ -68,7 +68,7 @@ class _ChooseModeScreenState extends ConsumerState<ChooseModeScreen> {
     return AppBar(
       automaticallyImplyLeading: false,
       title: const Text(
-        'Choose Mode',
+        'Listen Mode',
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,

@@ -5,14 +5,14 @@ import '../../questions/tts_translator.dart';
 import '/questions/word_generator.dart';
 import 'confetti_helper.dart';
 
-class SpeakModeScreen extends ConsumerStatefulWidget {
+class ReadModeScreen extends ConsumerStatefulWidget {
   final int elapsedTime;
   final VoidCallback pauseTimer;
   final VoidCallback resumeTimer;
   final VoidCallback showQuitDialog;
   final VoidCallback endQuiz;
 
-  const SpeakModeScreen({
+  const ReadModeScreen({
     super.key,
     required this.elapsedTime,
     required this.pauseTimer,
@@ -22,10 +22,10 @@ class SpeakModeScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  _SpeakModeScreenState createState() => _SpeakModeScreenState();
+  _ReadModeScreenState createState() => _ReadModeScreenState();
 }
 
-class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
+class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   bool isListening = false;
   String _recognizedWord = '';
   late final ConfettiManager confettiManager;
@@ -192,7 +192,7 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
       child: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          'Speak Mode',
+          'Read Mode',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -304,13 +304,7 @@ class _SpeakModeScreenState extends ConsumerState<SpeakModeScreen> {
         color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(15),
       ),
-      child: /*IconButton(
-        icon: const Icon(Icons.volume_up),
-        iconSize: 70,
-        color: Colors.red.shade700,
-        onPressed: () => _speakWord(ref.read(wordGameStateProvider).correctWord),
-      ),*/
-      Center(
+      child: Center(
         child: Text(
           ref.read(wordGameStateProvider).correctWord,
           style: TextStyle(

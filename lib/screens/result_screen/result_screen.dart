@@ -170,7 +170,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
       width: MediaQuery.of(context).size.width * 0.7,
       height: 60,
       child: ElevatedButton.icon(
-          icon: Icon(icon, color: Colors.white),
+          icon: Icon(icon, color: Colors.red),
           label: Text(
             label,
             style: const TextStyle(
@@ -279,7 +279,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
               ),
               const SizedBox(height: 15),
               _buildActionButton(
-                label: 'Go to Start Screen',
+                label: 'Go to Home Page',
                 onPressed: _handleExit,
                 gradientColors: [Colors.red, Colors.deepOrange],
                 icon: Icons.home,

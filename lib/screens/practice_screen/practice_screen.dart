@@ -116,9 +116,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget _buildGameScreen(String gameMode, GameScreenProps props) {
     switch (gameMode) {
       case 'read':
-        return ChooseModeScreen(props: props);
+        return ListenModeScreen(props: props);
       case 'listen':
-        return SpeakModeScreen(
+        return ReadModeScreen(
           elapsedTime: props.elapsedTime,
           pauseTimer: props.pauseTimer,
           resumeTimer: props.resumeTimer,
