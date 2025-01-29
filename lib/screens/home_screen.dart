@@ -63,9 +63,17 @@ class HomeScreen extends ConsumerWidget {
               value: ref.watch(contentTypeProvider),
               items: [
                 const DropdownMenuItem<String>(
-                    value: '2a', child: Text('2A Sentences')),
+                    value: '7a', child: Text('7A Sentences')),
                 const DropdownMenuItem<String>(
-                    value: 'a1', child: Text('A1 Sentences')),
+                    value: '6a', child: Text('6A Sentences')),
+                const DropdownMenuItem<String>(
+                    value: '5a', child: Text('5A Sentences')),
+                const DropdownMenuItem<String>(
+                    value: '4a', child: Text('4A Sentences')),
+                const DropdownMenuItem<String>(
+                    value: '3a', child: Text('3A Sentences')),
+                const DropdownMenuItem<String>(
+                    value: '2a', child: Text('2A Sentences')),
                 ...[
                   '3',
                   '4',

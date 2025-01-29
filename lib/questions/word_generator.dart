@@ -7,10 +7,18 @@ import 'sentence_list.dart';
 class WordGameService {
   List<String> _getSentencesFromList(String listType) {
     switch (listType) {
+      case '7a':
+        return EnglishSentences.kumon7aSentences;
+      case '6a':
+        return EnglishSentences.kumon6aSentences;
+      case '5a':
+        return EnglishSentences.kumon5aSentences;
+      case '4a':
+        return EnglishSentences.kumon4aSentences;
+      case '3a':
+        return EnglishSentences.kumon3aSentences;
       case '2a':
         return EnglishSentences.kumon2aSentences;
-      case 'a1':
-        return EnglishSentences.a1Sentences;
       case '3':
       case '4':
       case '5':
