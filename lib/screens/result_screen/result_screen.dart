@@ -257,13 +257,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                   ),
                                 ),
                                 title: Text(
-                                  'Correct Word: ${widget.answeredQuestions[index]}',
+                                  'Correct Answer: ${widget.answeredQuestions[index]}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 subtitle: Text(
-                                  'Selected Word: ${widget.userSelectedWords[index]}',
+                                  'Selected Answer: ${widget.userSelectedWords[index]}',
                                   style: TextStyle(
                                     color: widget.answeredCorrectly[index]
                                         ? Colors.green[700]

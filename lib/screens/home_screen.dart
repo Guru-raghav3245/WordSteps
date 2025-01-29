@@ -20,7 +20,6 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
-       
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
@@ -58,19 +57,38 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 20),
-            _buildDropdownCard(
+            _buildDropdownCard<String>(
               context,
-              title: 'Word Length',
-              value: ref.watch(wordLengthProvider),
-              items: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((length) {
-                return DropdownMenuItem(
-                  value: length,
-                  child: Text('$length Letter Words'),
-                );
-              }).toList(),
+              title: 'Content Type',
+              value: ref.watch(contentTypeProvider),
+              items: [
+                const DropdownMenuItem<String>(
+                    value: '2a', child: Text('2A Sentences')),
+                const DropdownMenuItem<String>(
+                    value: 'a1', child: Text('A1 Sentences')),
+                ...[
+                  '3',
+                  '4',
+                  '5',
+                  '6',
+                  '7',
+                  '8',
+                  '9',
+                  '10',
+                  '11',
+                  '12',
+                  '13',
+                  '14'
+                ].map((length) {
+                  return DropdownMenuItem<String>(
+                    value: length,
+                    child: Text('$length Letter Words'),
+                  );
+                }).toList(),
+              ],
               onChanged: (value) {
                 if (value != null) {
-                  ref.read(wordLengthProvider.notifier).state = value;
+                  ref.read(contentTypeProvider.notifier).state = value;
                 }
               },
             ),
