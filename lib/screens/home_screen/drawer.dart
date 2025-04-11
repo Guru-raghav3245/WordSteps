@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/support_screen.dart';
 import 'package:word_app/screens/settings_screen.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
+import 'package:word_app/theme_provider.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -10,6 +11,7 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final themeMode = ref.watch(themeModeProvider);
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.75,
@@ -20,14 +22,7 @@ class AppDrawer extends ConsumerWidget {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.secondary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: theme.colorScheme.primary,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -53,24 +48,36 @@ class AppDrawer extends ConsumerWidget {
               icon: Icons.home,
               title: 'Home',
               onTap: () => _navigateTo(context, const HomeScreen()),
-              backgroundColor: theme.colorScheme.surface,
             ),
             _buildDrawerItem(
               context: context,
               icon: Icons.support_agent,
               title: 'Get Support',
-              onTap: () => _navigateTo(context, SupportScreen()),
-              backgroundColor: theme.colorScheme.error.withOpacity(0.2),
-              iconColor: theme.colorScheme.error,
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
-              borderColor: theme.colorScheme.error,
+              onTap: () => _navigateTo(context, const SupportScreen()),
             ),
             _buildDrawerItem(
               context: context,
               icon: Icons.settings,
               title: 'Settings',
-              onTap: () => _navigateTo(context, SettingsScreen()),
-              backgroundColor: theme.colorScheme.surface,
+              onTap: () => _navigateTo(context, const SettingsScreen()),
+            ),
+            SwitchListTile(
+              title: Text(
+                'Dark Mode',
+                style: theme.textTheme.bodyLarge,
+              ),
+              value: themeMode == ThemeMode.dark,
+              onChanged: (value) {
+                ref.read(themeModeProvider.notifier).state =
+                    value ? ThemeMode.dark : ThemeMode.light;
+              },
+              activeColor: theme.colorScheme.primary,
+              secondary: Icon(
+                themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
+                color: theme.iconTheme.color,
+              ),
             ),
           ],
         ),
@@ -81,7 +88,6 @@ class AppDrawer extends ConsumerWidget {
   void _navigateTo(BuildContext context, Widget screen) {
     Navigator.pop(context); // Close the drawer
     if (screen is HomeScreen) {
-      // Replace the current screen with HomeScreen to simulate 'switch to start'
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => screen),
@@ -99,87 +105,26 @@ class AppDrawer extends ConsumerWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    bool isPremiumRequired = false,
-    Color? backgroundColor,
-    Color? iconColor,
-    Color? borderColor,
-    TextStyle? textStyle,
-    Gradient? gradient,
   }) {
     final theme = Theme.of(context);
-    final defaultIconColor =
-        isPremiumRequired ? Colors.grey : theme.iconTheme.color;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      decoration: BoxDecoration(
-        gradient: gradient,
-        color:
-            gradient == null ? backgroundColor ?? theme.cardTheme.color : null,
-        borderRadius: BorderRadius.circular(12),
-        border: borderColor != null
-            ? Border.all(color: borderColor, width: 1.5)
-            : isPremiumRequired
-                ? Border.all(
-                    color: theme.colorScheme.error.withOpacity(0.5), width: 1.5)
-                : Border.all(color: theme.dividerColor.withOpacity(0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.white
-          ),
-        ],
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: theme.iconTheme.color,
+        size: 26,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        splashColor: theme.colorScheme.primary.withOpacity(0.3),
-        highlightColor: theme.colorScheme.primary.withOpacity(0.1),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: (iconColor ??
-                          defaultIconColor ??
-                          theme.colorScheme.primary)
-                      .withOpacity(0.1),
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor ?? defaultIconColor,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.bodyLarge?.merge(textStyle).copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 16,
-                      ),
-                ),
-              ),
-              if (isPremiumRequired)
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.colorScheme.error.withOpacity(0.2),
-                  ),
-                  child: Icon(
-                    Icons.lock,
-                    size: 20,
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-            ],
-          ),
-        ),
+      title: Text(
+        title,
+        style: theme.textTheme.bodyLarge,
       ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      tileColor: theme.cardTheme.color,
+      selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
     );
   }
 }

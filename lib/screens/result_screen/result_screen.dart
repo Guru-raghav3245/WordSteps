@@ -49,7 +49,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
-    _controller.forward(); // Start the animations
+    _controller.forward();
   }
 
   @override
@@ -78,122 +78,19 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
         text: 'Check out my quiz results! Attached is the detailed report.',
       );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sharing PDF: ${e.toString()}'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sharing PDF: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
-  }
-
-  Widget _buildStatsCard(BuildContext context) {
-  int minutes = widget.totalTime ~/ 60;
-  int seconds = widget.totalTime % 60;
-  
-  // Prevent division by zero and handle empty list scenarios
-  int totalQuestions = widget.answeredQuestions.length;
-  int correctAnswers = widget.answeredCorrectly.where((correct) => correct).length;
-  
-  // Ensure safe division by using max to prevent division by zero
-  double progressValue = totalQuestions > 0 
-    ? correctAnswers / totalQuestions 
-    : 0.0;
-
-  return Container(
-    width: MediaQuery.of(context).size.width * 0.9, // Limit width
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min, // Prevent overflow
-      children: [
-        _buildStatRow('Time Taken', '$minutes:${seconds.toString().padLeft(2, '0')}'),
-        const Divider(height: 20, color: Colors.black12),
-        _buildStatRow('Questions Attended', '$totalQuestions'),
-        const Divider(height: 20, color: Colors.black12),
-        _buildStatRow('Correct Answers', '$correctAnswers'),
-        const SizedBox(height: 10),
-        LinearProgressIndicator(
-          value: progressValue, // Use safe value
-          backgroundColor: Colors.red.shade100,
-          color: Colors.green,
-          minHeight: 8,
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _buildStatRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required VoidCallback onPressed,
-    required List<Color> gradientColors,
-    required IconData icon,
-  }) {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.7,
-      height: 60,
-      child: ElevatedButton.icon(
-          icon: Icon(icon, color: Colors.red),
-          label: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.red,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            backgroundColor: Colors.white,
-            shadowColor: Colors.transparent,
-            padding: EdgeInsets.zero,
-          ),
-          iconAlignment: IconAlignment.start),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return WillPopScope(
       onWillPop: () async {
         await _handleExit();
@@ -202,11 +99,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: Colors.red,
-          title: const Text(
-            'Quiz Results',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-          ),
+          title: const Text('Quiz Results'),
           centerTitle: true,
         ),
         body: Padding(
@@ -224,10 +117,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                           opacity: _fadeAnimation,
                           child: Text(
                             'No questions attended',
-                            style: TextStyle(
-                              color: Colors.red[700],
-                              fontSize: 20,
-                              fontStyle: FontStyle.italic,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: theme.colorScheme.error,
                             ),
                           ),
                         ),
@@ -235,19 +126,15 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                     : SlideTransition(
                         position: _slideAnimation,
                         child: ListView.builder(
-                          // Add a null check to prevent potential issues
                           itemCount: widget.answeredQuestions.length,
                           itemBuilder: (context, index) {
-                            // Also add null checks for accessing lists
                             return Card(
-                              elevation: 2,
-                              margin: const EdgeInsets.symmetric(vertical: 8),
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor:
                                       widget.answeredCorrectly[index]
                                           ? Colors.green
-                                          : Colors.red[600],
+                                          : theme.colorScheme.error,
                                   child: Text(
                                     (index + 1).toString(),
                                     style: const TextStyle(
@@ -258,17 +145,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                 ),
                                 title: Text(
                                   'Correct Answer: ${widget.answeredQuestions[index]}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: theme.textTheme.bodyLarge,
                                 ),
                                 subtitle: Text(
                                   'Selected Answer: ${widget.userSelectedWords[index]}',
-                                  style: TextStyle(
+                                  style: theme.textTheme.bodyMedium?.copyWith(
                                     color: widget.answeredCorrectly[index]
-                                        ? Colors.green[700]
-                                        : Colors.red[700],
-                                    fontWeight: FontWeight.w600,
+                                        ? Colors.green
+                                        : theme.colorScheme.error,
                                   ),
                                 ),
                               ),
@@ -281,19 +165,89 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
               _buildActionButton(
                 label: 'Go to Home Page',
                 onPressed: _handleExit,
-                gradientColors: [Colors.red, Colors.deepOrange],
                 icon: Icons.home,
               ),
               const SizedBox(height: 15),
               _buildActionButton(
                 label: 'Share Report',
                 onPressed: _sharePDFReport,
-                gradientColors: [Colors.green, Colors.lightGreen],
                 icon: Icons.share,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    int minutes = widget.totalTime ~/ 60;
+    int seconds = widget.totalTime % 60;
+    int totalQuestions = widget.answeredQuestions.length;
+    int correctAnswers =
+        widget.answeredCorrectly.where((correct) => correct).length;
+    double progressValue =
+        totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildStatRow(
+                'Time Taken', '$minutes:${seconds.toString().padLeft(2, '0')}'),
+            const Divider(),
+            _buildStatRow('Questions Attended', '$totalQuestions'),
+            const Divider(),
+            _buildStatRow('Correct Answers', '$correctAnswers'),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: progressValue,
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
+              color: theme.colorScheme.primary,
+              minHeight: 8,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: theme.textTheme.bodyLarge),
+          Text(
+            value,
+            style: theme.textTheme.bodyLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback onPressed,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.7,
+      child: ElevatedButton.icon(
+        icon: Icon(icon),
+        label: Text(label),
+        onPressed: onPressed,
+        style: theme.elevatedButtonTheme.style,
       ),
     );
   }

@@ -7,19 +7,18 @@ import 'drawer.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'read');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
+final contentTypeProvider = StateProvider<String>((ref) => '3');
 
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red,
-        title: const Text(
-          'Word Guessing Game',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        title: const Text('Word Guessing Game'),
         centerTitle: true,
       ),
       drawer: const AppDrawer(),
@@ -28,14 +27,10 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               'Welcome to the Word Guessing Game!',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+              style: theme.textTheme.headlineMedium,
             ),
             const SizedBox(height: 40),
             _buildDropdownCard(
@@ -43,14 +38,8 @@ class HomeScreen extends ConsumerWidget {
               title: 'Game Mode',
               value: ref.watch(gameModeProvider),
               items: const [
-                DropdownMenuItem(
-                  value: 'read',
-                  child: Text('Listen Mode'),
-                ),
-                DropdownMenuItem(
-                  value: 'listen',
-                  child: Text('Read Mode'),
-                ),
+                DropdownMenuItem(value: 'read', child: Text('Listen Mode')),
+                DropdownMenuItem(value: 'listen', child: Text('Read Mode')),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -64,37 +53,18 @@ class HomeScreen extends ConsumerWidget {
               title: 'Content Type',
               value: ref.watch(contentTypeProvider),
               items: [
-                const DropdownMenuItem<String>(
-                    value: '7a', child: Text('7A Sentences')),
-                const DropdownMenuItem<String>(
-                    value: '6a', child: Text('6A Sentences')),
-                const DropdownMenuItem<String>(
-                    value: '5a', child: Text('5A Sentences')),
-                const DropdownMenuItem<String>(
-                    value: '4a', child: Text('4A Sentences')),
-                const DropdownMenuItem<String>(
-                    value: '3a', child: Text('3A Sentences')),
-                const DropdownMenuItem<String>(
-                    value: '2a', child: Text('2A Sentences')),
-                ...[
-                  '3',
-                  '4',
-                  '5',
-                  '6',
-                  '7',
-                  '8',
-                  '9',
-                  '10',
-                  '11',
-                  '12',
-                  '13',
-                  '14'
-                ].map((length) {
-                  return DropdownMenuItem<String>(
-                    value: length,
-                    child: Text('$length Letter Words'),
-                  );
-                }).toList(),
+                const DropdownMenuItem(value: '7a', child: Text('7A Sentences')),
+                const DropdownMenuItem(value: '6a', child: Text('6A Sentences')),
+                const DropdownMenuItem(value: '5a', child: Text('5A Sentences')),
+                const DropdownMenuItem(value: '4a', child: Text('4A Sentences')),
+                const DropdownMenuItem(value: '3a', child: Text('3A Sentences')),
+                const DropdownMenuItem(value: '2a', child: Text('2A Sentences')),
+                ...['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+                    .map((length) => DropdownMenuItem<String>(
+                          value: length,
+                          child: Text('$length Letter Words'),
+                        ))
+                    .toList(),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -110,11 +80,9 @@ class HomeScreen extends ConsumerWidget {
                 ref.read(wordGameStateProvider.notifier).initializeGame();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const PracticeScreen()),
+                  MaterialPageRoute(builder: (context) => const PracticeScreen()),
                 );
               },
-              gradientColors: [Colors.red, Colors.deepOrange],
             ),
             const SizedBox(height: 20),
             _buildActionButton(
@@ -123,11 +91,9 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
                 );
               },
-              gradientColors: [Colors.orange, Colors.yellow],
             ),
           ],
         ),
@@ -142,37 +108,24 @@ class HomeScreen extends ConsumerWidget {
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: theme.textTheme.titleLarge),
+            DropdownButton<T>(
+              value: value,
+              underline: const SizedBox(),
+              items: items,
+              onChanged: onChanged,
+              style: theme.textTheme.bodyLarge,
             ),
-          ),
-          DropdownButton<T>(
-            value: value,
-            underline: const SizedBox(),
-            items: items,
-            onChanged: onChanged,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -181,46 +134,15 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context, {
     required String label,
     required VoidCallback onPressed,
-    required List<Color> gradientColors,
   }) {
+    final theme = Theme.of(context);
+
     return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.7, // 70% of screen width
-      height: 60, // Increased height
+      width: MediaQuery.of(context).size.width * 0.7,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: EdgeInsets.zero, // Remove default padding
-        ),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: gradientColors),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: gradientColors.last.withOpacity(0.4),
-                blurRadius: 10,
-                spreadRadius: 1,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Container(
-            alignment: Alignment.center,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        style: theme.elevatedButtonTheme.style,
+        child: Text(label, style: const TextStyle(fontSize: 18)),
       ),
     );
   }

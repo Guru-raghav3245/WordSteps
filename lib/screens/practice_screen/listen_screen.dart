@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/questions/word_generator.dart';
 import '/questions/tts_translator.dart';
 import 'confetti_helper.dart';
+import 'package:word_app/models/word_game_state.dart';
 
 class GameScreenProps {
   final int elapsedTime;
@@ -57,217 +58,176 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final wordGameState = ref.watch(wordGameStateProvider);
+
     return Scaffold(
-      appBar: _buildAppBar(wordGameState),
-      body: _buildBody(wordGameState),
+      appBar: _buildAppBar(theme, wordGameState),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    const Spacer(),
+                    if (!wordGameState.isPaused)
+                      _buildGameContent(theme, wordGameState)
+                    else
+                      _buildPausedContent(theme),
+                    const Spacer(),
+                    _buildPauseButton(theme, wordGameState),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          _buildConfetti(),
+        ],
+      ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(wordGameStateProviderwordGameState) {
+  PreferredSizeWidget _buildAppBar(ThemeData theme, WordGameState wordGameState) {
     return AppBar(
       automaticallyImplyLeading: false,
-      title: const Text(
-        'Listen Mode',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      backgroundColor: Colors.red.shade600,
-      elevation: 0,
+      title: const Text('Listen Mode'),
+      centerTitle: true,
       actions: [
-        _buildTimerWidget(),
-        _buildActionButtons(),
+        _buildTimerWidget(theme),
+        _buildActionButtons(theme),
       ],
     );
   }
 
-  Widget _buildTimerWidget() {
+  Widget _buildTimerWidget(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Center(
-        child: Text(
-          _formatTime(widget.props.elapsedTime),
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
+      child: Text(
+        _formatTime(widget.props.elapsedTime),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onPrimary,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(ThemeData theme) {
     return Row(
       children: [
         IconButton(
-          icon: const Icon(Icons.exit_to_app, color: Colors.white),
-          iconSize: 28,
+          icon: Icon(Icons.exit_to_app, color: theme.iconTheme.color),
           onPressed: widget.props.showQuitDialog,
+          tooltip: 'Quit Game',
         ),
         IconButton(
-          icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-          iconSize: 28,
+          icon: Icon(Icons.check_circle_outline, color: theme.iconTheme.color),
           onPressed: widget.props.endQuiz,
+          tooltip: 'End Quiz',
         ),
         const SizedBox(width: 8),
       ],
     );
   }
 
-  Widget _buildBody(wordGameStateProviderwordGameState) {
-    return Stack(
-      children: [
-        _buildBackground(),
-        SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const Spacer(),
-                  if (!wordGameStateProviderwordGameState.isPaused)
-                    _buildGameContent(wordGameStateProviderwordGameState)
-                  else
-                    _buildPausedContent(),
-                  const Spacer(),
-                  _buildPauseButton(wordGameStateProviderwordGameState),
-                ],
-              ),
+  Widget _buildGameContent(ThemeData theme, WordGameState wordGameState) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSpeakerButton(theme),
+            const SizedBox(height: 32),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: wordGameState.options.map((word) => _buildOptionButton(theme, word)).toList(),
             ),
-          ),
-        ),
-        _buildConfetti(),
-      ],
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.red.shade600,
-            Colors.red.shade100,
-            Colors.white,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGameContent(wordGameState) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.9,
-      padding: const EdgeInsets.all(24),
-      decoration: _buildCardDecoration(),
-      child: Column(
-        children: [
-          _buildSpeakerButton(),
-          const SizedBox(height: 50),
-          ...wordGameState.options.map((word) => _buildOptionButton(word)),
-        ],
-      ),
-    );
-  }
-
-  BoxDecoration _buildCardDecoration() {
-    return BoxDecoration(
-      color: Colors.white.withOpacity(0.9),
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSpeakerButton() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.volume_up),
-        iconSize: 70,
-        color: Colors.red.shade700,
-        onPressed: () => _speakWord(ref.read(wordGameStateProvider).correctWord),
-      ),
-    );
-  }
-
-  Widget _buildOptionButton(String word) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: ElevatedButton(
-        onPressed: () => _handleWordSelection(word),
-        style: _buildOptionButtonStyle(),
-        child: Text(
-          word,
-          style: TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.w600,
-            color: Colors.red.shade700,
+  Widget _buildSpeakerButton(ThemeData theme) {
+    return GestureDetector(
+      onTap: () => _speakWord(ref.read(wordGameStateProvider).correctWord),
+      child: Card(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Icon(
+            Icons.volume_up,
+            size: 60,
+            color: theme.colorScheme.primary,
           ),
         ),
       ),
     );
   }
 
-  ButtonStyle _buildOptionButtonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.red.shade700,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.red.shade200),
-      ),
-      minimumSize: const Size(double.infinity, 48),
-    );
-  }
-
-  Widget _buildPausedContent() {
-    return const Center(
-      child: Text(
-        'Game Paused',
-        style: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+  Widget _buildOptionButton(ThemeData theme, String word) {
+    return SizedBox(
+      width: 120,
+      child: ElevatedButton(
+        onPressed: () => _handleWordSelection(word),
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          backgroundColor: MaterialStateProperty.all(theme.colorScheme.primary),
+          foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+          shape: MaterialStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        child: Text(
+          word,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onPrimary,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
   }
 
-  Widget _buildPauseButton( wordGameState) {
+  Widget _buildPausedContent(ThemeData theme) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'Game Paused',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 32),
       child: FloatingActionButton(
         onPressed: wordGameState.isPaused ? null : widget.props.pauseTimer,
         backgroundColor:
-            wordGameState.isPaused ? Colors.grey : Colors.red.shade700,
-        elevation: 4,
+            wordGameState.isPaused ? Colors.grey : theme.colorScheme.primary,
         child: Icon(
           wordGameState.isPaused ? Icons.play_arrow : Icons.pause,
-          size: 48,
-          color: Colors.white,
+          size: 36,
+          color: theme.colorScheme.onPrimary,
         ),
       ),
     );
@@ -296,14 +256,14 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
     if (word == ref.read(wordGameStateProvider).correctWord) {
       confettiManager.correctConfettiController.play();
     }
-    
+
     ref.read(wordGameStateProvider.notifier).handleAnswer(word);
     _speakNextWord();
   }
 
   void _speakNextWord() {
     Future.delayed(
-      const Duration(milliseconds: 0),
+      const Duration(milliseconds: 500),
       () {
         final word = ref.read(wordGameStateProvider).correctWord;
         if (word.isNotEmpty) {
