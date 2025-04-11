@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/practice_screen/practice_screen.dart';
-import 'settings_screen.dart';
+import '../settings_screen.dart';
 import 'package:word_app/questions/word_generator.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'read');
