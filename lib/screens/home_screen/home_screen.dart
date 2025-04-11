@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/practice_screen/practice_screen.dart';
 import '../settings_screen.dart';
 import 'package:word_app/questions/word_generator.dart';
+import 'drawer.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'read');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
         ),
         centerTitle: true,
       ),
+      drawer: const AppDrawer(),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
         child: Column(

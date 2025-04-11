@@ -1,21 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/support_screen.dart';
 import 'package:word_app/screens/settings_screen.dart';
+import 'package:word_app/screens/home_screen/home_screen.dart';
 
-class AppDrawer extends StatelessWidget {
-  final VoidCallback switchToStartScreen;
-  final bool isDarkMode;
-  final Function(bool) toggleDarkMode;
-
-  const AppDrawer({
-    required this.switchToStartScreen,
-    required this.isDarkMode,
-    required this.toggleDarkMode,
-    super.key,
-  });
+class AppDrawer extends ConsumerWidget {
+  const AppDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Drawer(
@@ -57,6 +50,13 @@ class AppDrawer extends StatelessWidget {
             ),
             _buildDrawerItem(
               context: context,
+              icon: Icons.home,
+              title: 'Home',
+              onTap: () => _navigateTo(context, const HomeScreen()),
+              backgroundColor: theme.colorScheme.surface,
+            ),
+            _buildDrawerItem(
+              context: context,
               icon: Icons.support_agent,
               title: 'Get Support',
               onTap: () => _navigateTo(context, SupportScreen()),
@@ -72,26 +72,6 @@ class AppDrawer extends StatelessWidget {
               onTap: () => _navigateTo(context, SettingsScreen()),
               backgroundColor: theme.colorScheme.surface,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-              child: SwitchListTile(
-                title: Text(
-                  "Dark Mode",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                value: isDarkMode,
-                onChanged: toggleDarkMode,
-                activeColor: theme.colorScheme.primary,
-                thumbColor:
-                    WidgetStateProperty.all(theme.colorScheme.onPrimary),
-                trackColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.selected)
-                        ? theme.colorScheme.primary.withOpacity(0.5)
-                        : theme.colorScheme.surface),
-              ),
-            ),
           ],
         ),
       ),
@@ -99,8 +79,19 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _navigateTo(BuildContext context, Widget screen) {
-    Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
+    Navigator.pop(context); // Close the drawer
+    if (screen is HomeScreen) {
+      // Replace the current screen with HomeScreen to simulate 'switch to start'
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => screen),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => screen),
+      );
+    }
   }
 
   Widget _buildDrawerItem({
@@ -134,9 +125,7 @@ class AppDrawer extends StatelessWidget {
                 : Border.all(color: theme.dividerColor.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.white
           ),
         ],
       ),

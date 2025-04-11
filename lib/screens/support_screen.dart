@@ -7,7 +7,7 @@ class SupportScreen extends StatelessWidget {
 
   Future<void> _launchGmail(BuildContext context) async {
     const String email = 'master.guru.raghav@gmail.com';
-    const String subject = 'Support Request - QuickMath Kids';
+    const String subject = 'Support Request - Word Guessing Game';
     const String body = 'Make sure to attach clear screenshots to make the support process faster.\n\n Please describe your issue or question below:\n\n ';
 
     final String gmailUrl = 'googlegmail:///mail/?to=$email&su=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}';
