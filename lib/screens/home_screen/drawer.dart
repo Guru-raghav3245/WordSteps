@@ -16,7 +16,7 @@ class AppDrawer extends ConsumerWidget {
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.75,
       child: Container(
-        color: theme.scaffoldBackgroundColor,
+        color: theme.colorScheme.primary, // Red background
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -30,13 +30,13 @@ class AppDrawer extends ConsumerWidget {
                   Icon(
                     Icons.calculate,
                     size: 50,
-                    color: theme.colorScheme.onPrimary,
+                    color: Colors.white,
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'Word Guessing Game',
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      color: theme.colorScheme.onPrimary,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -64,20 +64,29 @@ class AppDrawer extends ConsumerWidget {
             SwitchListTile(
               title: Text(
                 'Dark Mode',
-                style: theme.textTheme.bodyLarge,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               value: themeMode == ThemeMode.dark,
               onChanged: (value) {
                 ref.read(themeModeProvider.notifier).state =
                     value ? ThemeMode.dark : ThemeMode.light;
               },
-              activeColor: theme.colorScheme.primary,
+              activeColor: Colors.white,
+              activeTrackColor: Colors.redAccent,
+              inactiveThumbColor: Colors.grey[400],
+              inactiveTrackColor: Colors.grey[700],
               secondary: Icon(
-                themeMode == ThemeMode.dark
-                    ? Icons.dark_mode
-                    : Icons.light_mode,
-                color: theme.iconTheme.color,
+                themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+                color: Colors.white,
               ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              tileColor: theme.cardTheme.color?.withOpacity(0.1),
             ),
           ],
         ),
@@ -108,23 +117,45 @@ class AppDrawer extends ConsumerWidget {
   }) {
     final theme = Theme.of(context);
 
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: theme.iconTheme.color,
-        size: 26,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Card(
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        color: theme.cardTheme.color?.withOpacity(0.2) ?? Colors.white10,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          splashColor: Colors.white.withOpacity(0.3),
+          highlightColor: theme.colorScheme.primary.withOpacity(0.4),
+          hoverColor: theme.colorScheme.primary.withOpacity(0.2),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      title: Text(
-        title,
-        style: theme.textTheme.bodyLarge,
-      ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      tileColor: theme.cardTheme.color,
-      selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
     );
   }
 }

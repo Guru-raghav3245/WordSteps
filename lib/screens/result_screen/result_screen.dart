@@ -34,7 +34,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
@@ -43,7 +43,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
+      begin: const Offset(0, 0.2),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
@@ -80,7 +80,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error sharing PDF: ${e.toString()}'),
+          content: Text('Error sharing PDF: $e'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -90,6 +90,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    int minutes = widget.totalTime ~/ 60;
+    int seconds = widget.totalTime % 60;
+    int totalQuestions = widget.answeredQuestions.length;
+    int correctAnswers =
+        widget.answeredCorrectly.where((correct) => correct).length;
+    double progressValue =
+        totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0;
 
     return WillPopScope(
       onWillPop: () async {
@@ -101,153 +108,273 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
           automaticallyImplyLeading: false,
           title: const Text('Quiz Results'),
           centerTitle: true,
+          elevation: 0,
         ),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildStatsCard(context),
-              const SizedBox(height: 30),
-              Expanded(
-                flex: 3,
-                child: widget.answeredQuestions.isEmpty
-                    ? Center(
-                        child: FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Text(
-                            'No questions attended',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              color: theme.colorScheme.error,
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Stats Section
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                children: [
+                                  Icon(Icons.timer,
+                                      size: 28,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$minutes:${seconds.toString().padLeft(2, '0')}',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Time',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Icon(Icons.question_answer,
+                                      size: 28,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$totalQuestions',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Questions',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      size: 28,
+                                      color: theme.colorScheme.primary),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$correctAnswers',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Correct',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: progressValue,
+                              backgroundColor:
+                                  theme.colorScheme.primary.withOpacity(0.2),
+                              color: theme.colorScheme.primary,
+                              minHeight: 10,
                             ),
                           ),
-                        ),
-                      )
-                    : SlideTransition(
-                        position: _slideAnimation,
-                        child: ListView.builder(
-                          itemCount: widget.answeredQuestions.length,
-                          itemBuilder: (context, index) {
-                            return Card(
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor:
-                                      widget.answeredCorrectly[index]
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Question Review Header
+                Text(
+                  'Question Review',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Question List
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: widget.answeredQuestions.isEmpty
+                      ? FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.quiz,
+                                  size: 64,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No questions answered yet!',
+                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try a quiz to see your results here.',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.arrow_back),
+                                  label: const Text('Back to Home'),
+                                  onPressed: _handleExit,
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor:
+                                        theme.colorScheme.onPrimary,
+                                    backgroundColor: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : SlideTransition(
+                          position: _slideAnimation,
+                          child: ListView.builder(
+                            itemCount: widget.answeredQuestions.length,
+                            itemBuilder: (context, index) {
+                              final isCorrect = widget.answeredCorrectly[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    leading: CircleAvatar(
+                                      backgroundColor: isCorrect
                                           ? Colors.green
                                           : theme.colorScheme.error,
-                                  child: Text(
-                                    (index + 1).toString(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                                      child: Icon(
+                                        isCorrect ? Icons.check : Icons.close,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      'Correct: ${widget.answeredQuestions[index]}',
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    subtitle: Text(
+                                      'Your Answer: ${widget.userSelectedWords[index]}',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: isCorrect
+                                            ? Colors.green
+                                            : theme.colorScheme.error,
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      '#${index + 1}',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                title: Text(
-                                  'Correct Answer: ${widget.answeredQuestions[index]}',
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                                subtitle: Text(
-                                  'Selected Answer: ${widget.userSelectedWords[index]}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: widget.answeredCorrectly[index]
-                                        ? Colors.green
-                                        : theme.colorScheme.error,
-                                  ),
-                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 24),
+                // Action Buttons
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      InkWell(
+                        onTap: _sharePDFReport,
+                        borderRadius: BorderRadius.circular(28),
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                            );
-                          },
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.share,
+                            color: theme.colorScheme.onPrimary,
+                            size: 28,
+                          ),
                         ),
                       ),
-              ),
-              const SizedBox(height: 15),
-              _buildActionButton(
-                label: 'Go to Home Page',
-                onPressed: _handleExit,
-                icon: Icons.home,
-              ),
-              const SizedBox(height: 15),
-              _buildActionButton(
-                label: 'Share Report',
-                onPressed: _sharePDFReport,
-                icon: Icons.share,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsCard(BuildContext context) {
-    final theme = Theme.of(context);
-    int minutes = widget.totalTime ~/ 60;
-    int seconds = widget.totalTime % 60;
-    int totalQuestions = widget.answeredQuestions.length;
-    int correctAnswers =
-        widget.answeredCorrectly.where((correct) => correct).length;
-    double progressValue =
-        totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildStatRow(
-                'Time Taken', '$minutes:${seconds.toString().padLeft(2, '0')}'),
-            const Divider(),
-            _buildStatRow('Questions Attended', '$totalQuestions'),
-            const Divider(),
-            _buildStatRow('Correct Answers', '$correctAnswers'),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: progressValue,
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
-              color: theme.colorScheme.primary,
-              minHeight: 8,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: Icon(Icons.home, color: theme.colorScheme.onPrimary),
+                          label: const Text('Home'),
+                          onPressed: _handleExit,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            backgroundColor: theme.colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: theme.textTheme.bodyLarge),
-          Text(
-            value,
-            style: theme.textTheme.bodyLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required VoidCallback onPressed,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.7,
-      child: ElevatedButton.icon(
-        icon: Icon(icon),
-        label: Text(label),
-        onPressed: onPressed,
-        style: theme.elevatedButtonTheme.style,
+        ),
       ),
     );
   }

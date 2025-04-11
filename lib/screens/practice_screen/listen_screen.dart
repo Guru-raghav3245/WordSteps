@@ -35,6 +35,7 @@ class ListenModeScreen extends ConsumerStatefulWidget {
 
 class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
   late final ConfettiManager confettiManager;
+  bool _isPaused = false;
 
   @override
   void initState() {
@@ -72,12 +73,12 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
                 child: Column(
                   children: [
                     const Spacer(),
-                    if (!wordGameState.isPaused)
+                    if (!_isPaused)
                       _buildGameContent(theme, wordGameState)
                     else
                       _buildPausedContent(theme),
                     const Spacer(),
-                    _buildPauseButton(theme, wordGameState),
+                    _buildPauseButton(theme),
                   ],
                 ),
               ),
@@ -123,12 +124,12 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
     return Row(
       children: [
         IconButton(
-          icon: Icon(Icons.exit_to_app, color: theme.iconTheme.color),
+          icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
           onPressed: widget.props.showQuitDialog,
           tooltip: 'Quit Game',
         ),
         IconButton(
-          icon: Icon(Icons.check_circle_outline, color: theme.iconTheme.color),
+          icon: Icon(Icons.check_circle_outline, color: theme.colorScheme.onPrimary),
           onPressed: widget.props.endQuiz,
           tooltip: 'End Quiz',
         ),
@@ -171,7 +172,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
           child: Icon(
             Icons.volume_up,
             size: 60,
-            color: theme.colorScheme.primary,
+            color: theme.colorScheme.primary, // Keep this as red for contrast against card
           ),
         ),
       ),
@@ -217,15 +218,23 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
     );
   }
 
-  Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
+  Widget _buildPauseButton(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 32),
       child: FloatingActionButton(
-        onPressed: wordGameState.isPaused ? null : widget.props.pauseTimer,
-        backgroundColor:
-            wordGameState.isPaused ? Colors.grey : theme.colorScheme.primary,
+        onPressed: () {
+          setState(() {
+            _isPaused = !_isPaused;
+            if (_isPaused) {
+              widget.props.pauseTimer();
+            } else {
+              widget.props.resumeTimer();
+            }
+          });
+        },
+        backgroundColor: _isPaused ? Colors.grey : theme.colorScheme.primary,
         child: Icon(
-          wordGameState.isPaused ? Icons.play_arrow : Icons.pause,
+          _isPaused ? Icons.play_arrow : Icons.pause,
           size: 36,
           color: theme.colorScheme.onPrimary,
         ),
@@ -256,7 +265,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
     if (word == ref.read(wordGameStateProvider).correctWord) {
       confettiManager.correctConfettiController.play();
     }
-
     ref.read(wordGameStateProvider.notifier).handleAnswer(word);
     _speakNextWord();
   }
