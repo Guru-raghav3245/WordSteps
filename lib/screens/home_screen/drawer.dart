@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/support_screen.dart';
 import 'package:word_app/screens/settings_screen.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
+import 'package:word_app/quiz_history/quiz_history_screen.dart';
 import 'package:word_app/theme_provider.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -16,7 +17,7 @@ class AppDrawer extends ConsumerWidget {
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.75,
       child: Container(
-        color: theme.colorScheme.primary, // Red background
+        color: theme.colorScheme.primary,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -51,6 +52,21 @@ class AppDrawer extends ConsumerWidget {
             ),
             _buildDrawerItem(
               context: context,
+              icon: Icons.history,
+              title: 'Quiz History',
+              onTap: () => _navigateTo(
+                  context,
+                  QuizHistoryScreen(
+                    () => Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HomeScreen()),
+                      (route) => false,
+                    ),
+                  )),
+            ),
+            _buildDrawerItem(
+              context: context,
               icon: Icons.support_agent,
               title: 'Get Support',
               onTap: () => _navigateTo(context, const SupportScreen()),
@@ -79,10 +95,13 @@ class AppDrawer extends ConsumerWidget {
               inactiveThumbColor: Colors.grey[400],
               inactiveTrackColor: Colors.grey[700],
               secondary: Icon(
-                themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+                themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
                 color: Colors.white,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -118,44 +137,43 @@ class AppDrawer extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Card(
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        color: theme.cardTheme.color?.withOpacity(0.2) ?? Colors.white10,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          splashColor: Colors.white.withOpacity(0.3),
-          highlightColor: theme.colorScheme.primary.withOpacity(0.4),
-          hoverColor: theme.colorScheme.primary.withOpacity(0.2),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 26,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Card(
+          elevation: 2,
+          shadowColor: Colors.black.withOpacity(0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: theme.cardTheme.color?.withOpacity(0.2) ?? Colors.white10,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            splashColor: Colors.white.withOpacity(0.3),
+            highlightColor: theme.colorScheme.primary.withOpacity(0.4),
+            hoverColor: theme.colorScheme.primary.withOpacity(0.2),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

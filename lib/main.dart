@@ -15,6 +15,7 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Word Guessing Game',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

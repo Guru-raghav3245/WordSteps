@@ -89,10 +89,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ResultScreen(
-          gameState.answeredQuestions,
-          gameState.answeredCorrectly,
-          _elapsedTime,
-          () => Navigator.of(context).popUntil((route) => route.isFirst),
+          answeredQuestions: gameState.answeredQuestions,
+          answeredCorrectly: gameState.answeredCorrectly,
+          totalTime: _elapsedTime,
+          switchToStartScreen: () => Navigator.of(context).popUntil((route) => route.isFirst),
           userSelectedWords: gameState.userSelectedWords,
         ),
       ),

@@ -7,7 +7,6 @@ import 'drawer.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'read');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
-final contentTypeProvider = StateProvider<String>((ref) => '3');
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});

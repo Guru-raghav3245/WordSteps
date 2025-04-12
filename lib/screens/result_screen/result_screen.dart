@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/questions/word_generator.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:word_app/quiz_history/quiz_history_service.dart';
 import 'pdf_generator.dart';
+import 'package:intl/intl.dart';
+import 'package:word_app/screens/home_screen/home_screen.dart';
 
 class ResultScreen extends ConsumerStatefulWidget {
   final List<String> answeredQuestions;
@@ -10,14 +13,16 @@ class ResultScreen extends ConsumerStatefulWidget {
   final int totalTime;
   final Function switchToStartScreen;
   final List<String> userSelectedWords;
+  final bool shouldSave; // New parameter
 
-  const ResultScreen(
-    this.answeredQuestions,
-    this.answeredCorrectly,
-    this.totalTime,
-    this.switchToStartScreen, {
-    super.key,
+  const ResultScreen({
+    required this.answeredQuestions,
+    required this.answeredCorrectly,
+    required this.totalTime,
+    required this.switchToStartScreen,
     required this.userSelectedWords,
+    this.shouldSave = true, // Default to true
+    super.key,
   });
 
   @override
@@ -50,6 +55,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     );
 
     _controller.forward();
+
+    // Save quiz only if shouldSave is true
+    if (widget.shouldSave) {
+      _saveQuiz();
+    }
   }
 
   @override
@@ -61,6 +71,36 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
   Future<void> _handleExit() async {
     ref.read(wordGameStateProvider.notifier).clearGameState();
     widget.switchToStartScreen();
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
+  Future<void> _saveQuiz() async {
+    try {
+      final contentType = ref.read(contentTypeProvider);
+      final gameMode = ref.read(gameModeProvider);
+      final timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      final baseTitle = 'Quiz-$contentType-${gameMode.toUpperCase()}';
+      final uniqueTitle = await QuizHistoryService.generateUniqueTitle(baseTitle);
+
+      await QuizHistoryService.saveQuiz(
+        title: uniqueTitle,
+        timestamp: timestamp,
+        contentType: contentType,
+        gameMode: gameMode,
+        totalTime: widget.totalTime,
+        answeredQuestions: widget.answeredQuestions,
+        answeredCorrectly: widget.answeredCorrectly,
+        userSelectedWords: widget.userSelectedWords,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Quiz saved successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save quiz: $e')),
+      );
+    }
   }
 
   Future<void> _sharePDFReport() async {
@@ -116,7 +156,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Stats Section
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: Card(
@@ -213,7 +252,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Question Review Header
                 Text(
                   'Question Review',
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -222,7 +260,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Question List
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.5,
                   child: widget.answeredQuestions.isEmpty
@@ -322,7 +359,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                         ),
                 ),
                 const SizedBox(height: 24),
-                // Action Buttons
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: Row(
