@@ -17,7 +17,6 @@ dependencies:
   flutter_tts: ^4.2.0
   english_words: ^4.0.0
   speech_to_text: ^6.1.1
-  flutter_sound: ^9.1.5
   pdf: ^3.11.1
   share_plus: ^10.1.4
   confetti: ^0.8.0
