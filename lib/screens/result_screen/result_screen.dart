@@ -11,7 +11,7 @@ class ResultScreen extends ConsumerStatefulWidget {
   final List<String> answeredQuestions;
   final List<bool> answeredCorrectly;
   final int totalTime;
-  final Function switchToStartScreen;
+  final Function? switchToStartScreen;
   final List<String> userSelectedWords;
   final bool shouldSave; // New parameter
 
@@ -19,7 +19,7 @@ class ResultScreen extends ConsumerStatefulWidget {
     required this.answeredQuestions,
     required this.answeredCorrectly,
     required this.totalTime,
-    required this.switchToStartScreen,
+    this.switchToStartScreen,
     required this.userSelectedWords,
     this.shouldSave = true, // Default to true
     super.key,
@@ -70,17 +70,22 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
 
   Future<void> _handleExit() async {
     ref.read(wordGameStateProvider.notifier).clearGameState();
-    widget.switchToStartScreen();
-    Navigator.popUntil(context, (route) => route.isFirst);
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
+    );
   }
 
   Future<void> _saveQuiz() async {
     try {
       final contentType = ref.read(contentTypeProvider);
       final gameMode = ref.read(gameModeProvider);
-      final timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      final timestamp =
+          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final baseTitle = 'Quiz-$contentType-${gameMode.toUpperCase()}';
-      final uniqueTitle = await QuizHistoryService.generateUniqueTitle(baseTitle);
+      final uniqueTitle =
+          await QuizHistoryService.generateUniqueTitle(baseTitle);
 
       await QuizHistoryService.saveQuiz(
         title: uniqueTitle,
@@ -178,7 +183,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                   const SizedBox(height: 4),
                                   Text(
                                     '$minutes:${seconds.toString().padLeft(2, '0')}',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.primary,
                                     ),
@@ -199,7 +205,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                   const SizedBox(height: 4),
                                   Text(
                                     '$totalQuestions',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.primary,
                                     ),
@@ -220,7 +227,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                   const SizedBox(height: 4),
                                   Text(
                                     '$correctAnswers',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.primary,
                                     ),
@@ -277,7 +285,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                 const SizedBox(height: 16),
                                 Text(
                                   'No questions answered yet!',
-                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                  style:
+                                      theme.textTheme.headlineSmall?.copyWith(
                                     color: theme.colorScheme.onSurface,
                                   ),
                                 ),
@@ -330,8 +339,9 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                     ),
                                     title: Text(
                                       'Correct: ${widget.answeredQuestions[index]}',
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                          fontWeight: FontWeight.w600),
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w600),
                                     ),
                                     subtitle: Text(
                                       'Your Answer: ${widget.userSelectedWords[index]}',
@@ -391,7 +401,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton.icon(
-                          icon: Icon(Icons.home, color: theme.colorScheme.onPrimary),
+                          icon: Icon(Icons.home,
+                              color: theme.colorScheme.onPrimary),
                           label: const Text('Home'),
                           onPressed: _handleExit,
                           style: ElevatedButton.styleFrom(

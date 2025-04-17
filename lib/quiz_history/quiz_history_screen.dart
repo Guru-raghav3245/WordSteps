@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:word_app/quiz_history/quiz_history_service.dart';
 import 'package:word_app/screens/result_screen/result_screen.dart';
+import 'package:word_app/screens/result_screen/result_screen.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
   final Function switchToStartScreen;
@@ -27,7 +28,8 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
     });
     final quizzes = await QuizHistoryService.getQuizzes();
     setState(() {
-      _quizzes = quizzes..sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
+      _quizzes = quizzes
+        ..sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
       _isLoading = false;
     });
   }
@@ -186,8 +188,8 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                         child: ListTile(
                           title: Text(
                             quiz['title'],
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.bold),
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
                             'Score: ${quiz['correctCount']}/${quiz['totalQuestions']} | Time: ${(quiz['totalTime'] ~/ 60)}:${(quiz['totalTime'] % 60).toString().padLeft(2, '0')}',
@@ -208,15 +210,8 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                                   answeredCorrectly:
                                       List<bool>.from(quiz['correctness']),
                                   totalTime: quiz['totalTime'],
-                                  userSelectedWords:
-                                      List<String>.from(quiz['userSelectedWords']),
-                                  switchToStartScreen: () {
-                                    widget.switchToStartScreen();
-                                    Navigator.popUntil(
-                                      context,
-                                      (route) => route.isFirst,
-                                    );
-                                  },
+                                  userSelectedWords: List<String>.from(
+                                      quiz['userSelectedWords']),
                                 ),
                               ),
                             );
