@@ -33,14 +33,26 @@ class ListenModeScreen extends ConsumerStatefulWidget {
   ConsumerState<ListenModeScreen> createState() => _ListenModeScreenState();
 }
 
-class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
+class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
+    with SingleTickerProviderStateMixin {
   late final ConfettiManager confettiManager;
   bool _isPaused = false;
+  bool _isSpeaking = false; // Track TTS speaking state
+  bool _canTap = true; // Debounce control
+  late AnimationController _scaleController; // For tap animation
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     confettiManager = ConfettiManager();
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
     _speakInitialWord();
   }
 
@@ -53,6 +65,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
 
   @override
   void dispose() {
+    _scaleController.dispose();
     confettiManager.dispose();
     super.dispose();
   }
@@ -162,21 +175,87 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
   }
 
   Widget _buildSpeakerButton(ThemeData theme) {
-    return GestureDetector(
-      onTap: () => _speakWord(ref.read(wordGameStateProvider).correctWord),
-      child: Card(
-        color: theme.colorScheme.primary.withOpacity(0.1),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Icon(
-            Icons.volume_up,
-            size: 60,
-            color: theme.colorScheme.primary, // Keep this as red for contrast against card
+    return Semantics(
+      label: 'Speak word',
+      button: true,
+      child: GestureDetector(
+        onTapDown: (_) => _scaleController.forward(),
+        onTapUp: (_) => _scaleController.reverse(),
+        onTapCancel: () => _scaleController.reverse(),
+        onTap: _canTap ? () => _handleSpeakTap(theme) : null,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Card(
+            elevation: 6, // Add shadow for depth
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)), // Subtle border
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary.withOpacity(0.2),
+                    theme.colorScheme.primary.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: _isSpeaking
+                  ? SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                      ),
+                    )
+                  : Icon(
+                      Icons.volume_up,
+                      size: 60,
+                      color: theme.colorScheme.primary,
+                    ),
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleSpeakTap(ThemeData theme) async {
+    if (!_canTap) return;
+    setState(() {
+      _canTap = false;
+      _isSpeaking = true;
+    });
+
+    final word = ref.read(wordGameStateProvider).correctWord;
+    await _speakWord(word);
+
+    // Debounce: Prevent new taps for 1 second after speaking
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      setState(() {
+        _isSpeaking = false;
+        _canTap = true;
+      });
+    }
+  }
+
+  Future<void> _speakWord(String word) async {
+    try {
+      await ref.read(ttsServiceProvider).speak(word, ref);
+    } catch (e) {
+      // Handle TTS error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error speaking word: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildOptionButton(ThemeData theme, String word) {
@@ -279,10 +358,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen> {
         }
       },
     );
-  }
-
-  void _speakWord(String word) {
-    ref.read(ttsServiceProvider).speak(word, ref);
   }
 
   String _formatTime(int seconds) {

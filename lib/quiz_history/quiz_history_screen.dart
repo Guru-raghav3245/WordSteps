@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:word_app/quiz_history/quiz_history_service.dart';
 import 'package:word_app/screens/result_screen/result_screen.dart';
-import 'package:word_app/screens/result_screen/result_screen.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
   final Function switchToStartScreen;
