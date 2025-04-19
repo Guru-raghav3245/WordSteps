@@ -37,9 +37,9 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     with SingleTickerProviderStateMixin {
   late final ConfettiManager confettiManager;
   bool _isPaused = false;
-  bool _isSpeaking = false; // Track TTS speaking state
-  bool _canTap = true; // Debounce control
-  late AnimationController _scaleController; // For tap animation
+  bool _isSpeaking = false;
+  bool _canTap = true;
+  late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
 
   @override
@@ -86,10 +86,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                 child: Column(
                   children: [
                     const Spacer(),
-                    if (!_isPaused)
-                      _buildGameContent(theme, wordGameState)
-                    else
-                      _buildPausedContent(theme),
+                    _buildMainContent(theme, wordGameState),
                     const Spacer(),
                     _buildPauseButton(theme),
                   ],
@@ -97,7 +94,18 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
               ),
             ),
           ),
-          _buildConfetti(),
+          Align(
+            alignment: Alignment.topCenter,
+            child: IgnorePointer(
+              child: confettiManager.buildCorrectConfetti(),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: IgnorePointer(
+              child: confettiManager.buildWrongConfetti(),
+            ),
+          ),
         ],
       ),
     );
@@ -109,33 +117,21 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
       title: const Text('Listen Mode'),
       centerTitle: true,
       actions: [
-        _buildTimerWidget(theme),
-        _buildActionButtons(theme),
-      ],
-    );
-  }
-
-  Widget _buildTimerWidget(ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        _formatTime(widget.props.elapsedTime),
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onPrimary,
-          fontWeight: FontWeight.w600,
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _formatTime(widget.props.elapsedTime),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(ThemeData theme) {
-    return Row(
-      children: [
         IconButton(
           icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
           onPressed: widget.props.showQuitDialog,
@@ -151,7 +147,23 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     );
   }
 
-  Widget _buildGameContent(ThemeData theme, WordGameState wordGameState) {
+  Widget _buildMainContent(ThemeData theme, WordGameState wordGameState) {
+    if (_isPaused) {
+      return Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Game Paused',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -160,138 +172,83 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSpeakerButton(theme),
+            Semantics(
+              label: 'Speak word',
+              button: true,
+              child: GestureDetector(
+                onTapDown: (_) => _scaleController.forward(),
+                onTapUp: (_) => _scaleController.reverse(),
+                onTapCancel: () => _scaleController.reverse(),
+                onTap: _canTap ? () => _handleSpeakTap(theme) : null,
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.colorScheme.primary.withOpacity(0.2),
+                            theme.colorScheme.primary.withOpacity(0.1),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      child: _isSpeaking
+                          ? SizedBox(
+                              width: 60,
+                              height: 60,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 4,
+                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                              ),
+                            )
+                          : Icon(
+                              Icons.volume_up,
+                              size: 60,
+                              color: theme.colorScheme.primary,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 32),
             Wrap(
               spacing: 16,
               runSpacing: 16,
               alignment: WrapAlignment.center,
-              children: wordGameState.options.map((word) => _buildOptionButton(theme, word)).toList(),
+              children: wordGameState.options.map((word) {
+                return SizedBox(
+                  width: 120,
+                  child: ElevatedButton(
+                    onPressed: () => _handleWordSelection(word),
+                    style: theme.elevatedButtonTheme.style?.copyWith(
+                      backgroundColor: MaterialStateProperty.all(theme.colorScheme.primary),
+                      foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+                      shape: MaterialStateProperty.all(
+                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    child: Text(
+                      word,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSpeakerButton(ThemeData theme) {
-    return Semantics(
-      label: 'Speak word',
-      button: true,
-      child: GestureDetector(
-        onTapDown: (_) => _scaleController.forward(),
-        onTapUp: (_) => _scaleController.reverse(),
-        onTapCancel: () => _scaleController.reverse(),
-        onTap: _canTap ? () => _handleSpeakTap(theme) : null,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Card(
-            elevation: 6, // Add shadow for depth
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)), // Subtle border
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary.withOpacity(0.2),
-                    theme.colorScheme.primary.withOpacity(0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(20),
-              child: _isSpeaking
-                  ? SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 4,
-                        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                      ),
-                    )
-                  : Icon(
-                      Icons.volume_up,
-                      size: 60,
-                      color: theme.colorScheme.primary,
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleSpeakTap(ThemeData theme) async {
-    if (!_canTap) return;
-    setState(() {
-      _canTap = false;
-      _isSpeaking = true;
-    });
-
-    final word = ref.read(wordGameStateProvider).correctWord;
-    await _speakWord(word);
-
-    // Debounce: Prevent new taps for 1 second after speaking
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() {
-        _isSpeaking = false;
-        _canTap = true;
-      });
-    }
-  }
-
-  Future<void> _speakWord(String word) async {
-    try {
-      await ref.read(ttsServiceProvider).speak(word, ref);
-    } catch (e) {
-      // Handle TTS error
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error speaking word: $e')),
-        );
-      }
-    }
-  }
-
-  Widget _buildOptionButton(ThemeData theme, String word) {
-    return SizedBox(
-      width: 120,
-      child: ElevatedButton(
-        onPressed: () => _handleWordSelection(word),
-        style: theme.elevatedButtonTheme.style?.copyWith(
-          backgroundColor: MaterialStateProperty.all(theme.colorScheme.primary),
-          foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        child: Text(
-          word,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onPrimary,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPausedContent(ThemeData theme) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'Game Paused',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.primary,
-          ),
         ),
       ),
     );
@@ -321,23 +278,31 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     );
   }
 
-  Widget _buildConfetti() {
-    return Stack(
-      children: [
-        IgnorePointer(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: confettiManager.buildCorrectConfetti(),
-          ),
-        ),
-        IgnorePointer(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: confettiManager.buildWrongConfetti(),
-          ),
-        ),
-      ],
-    );
+  void _handleSpeakTap(ThemeData theme) async {
+    if (!_canTap) return;
+    setState(() {
+      _canTap = false;
+      _isSpeaking = true;
+    });
+
+    final word = ref.read(wordGameStateProvider).correctWord;
+    try {
+      await ref.read(ttsServiceProvider).speak(word, ref);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error speaking word: $e')),
+        );
+      }
+    }
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      setState(() {
+        _isSpeaking = false;
+        _canTap = true;
+      });
+    }
   }
 
   void _handleWordSelection(String word) {
@@ -349,15 +314,10 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _speakNextWord() {
-    Future.delayed(
-      const Duration(milliseconds: 500),
-      () {
-        final word = ref.read(wordGameStateProvider).correctWord;
-        if (word.isNotEmpty) {
-          _speakWord(word);
-        }
-      },
-    );
+    final word = ref.read(wordGameStateProvider).correctWord;
+    if (word.isNotEmpty) {
+      ref.read(ttsServiceProvider).speak(word, ref);
+    }
   }
 
   String _formatTime(int seconds) {
