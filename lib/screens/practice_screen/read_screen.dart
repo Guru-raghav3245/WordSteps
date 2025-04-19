@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../questions/speech_recog.dart';
 import '../../questions/tts_translator.dart';
 import '/questions/word_generator.dart';
+import 'package:word_app/models/word_game_state.dart';
 import 'confetti_helper.dart';
 
 class ReadModeScreen extends ConsumerStatefulWidget {
@@ -60,11 +61,34 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       await _speechRecognitionService.initializeSpeech();
     } catch (e) {
       print("Speech recognition initialization failed: $e");
+      if (mounted) {
+        setState(() {
+          _recognizedWord = e.toString().contains('permission')
+              ? 'Microphone permission required'
+              : 'Speech recognition unavailable';
+        });
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Speech Recognition Error'),
+            content: Text(
+              e.toString().contains('permission')
+                  ? 'Please grant microphone permission to use speech recognition.'
+                  : 'Speech recognition is not available on this device.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
   void _startSpeechRecognition() async {
-    final wordGameState = ref.read(wordGameStateProvider);
 
     try {
       if (!_speechRecognitionService.isListening) {
@@ -78,17 +102,26 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           onResult: (recognizedWord) {
             if (!mounted) return;
 
+            print('Recognized word: $recognizedWord'); // Debug
             setState(() {
-              _recognizedWord = recognizedWord;
+              _recognizedWord = recognizedWord.isEmpty ? 'No match' : recognizedWord;
             });
 
-            if (recognizedWord.toLowerCase() ==
-                wordGameState.correctWord.toLowerCase()) {
+            final previousAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
+            final previousWord = ref.read(wordGameStateProvider).correctWord;
+            ref.read(wordGameStateProvider.notifier).handleAnswer(
+                recognizedWord.isEmpty || recognizedWord == 'NO_MATCH' ? 'NO_MATCH' : recognizedWord);
+
+            final newState = ref.read(wordGameStateProvider);
+            print('Incorrect attempts: ${newState.incorrectAttempts}'); // Debug
+            if (recognizedWord.toLowerCase().trim() == previousWord.toLowerCase().trim()) {
               confettiManager.correctConfettiController.play();
+            } else if (newState.incorrectAttempts == 0 && previousAttempts >= 2) {
+              confettiManager.wrongConfettiController.play();
+            } else {
+              confettiManager.wrongConfettiController.play();
             }
-            ref
-                .read(wordGameStateProvider.notifier)
-                .handleAnswer(_recognizedWord);
+
             _speakNextWord();
           },
         );
@@ -96,16 +129,21 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     } catch (e) {
       if (!mounted) return;
 
+      print('Speech recognition exception: $e'); // Debug
       setState(() {
         isListening = false;
         _recognizedWord = 'Error occurred';
+      });
+    } finally {
+      setState(() {
+        isListening = false;
       });
     }
   }
 
   void _speakNextWord() {
     Future.delayed(
-      const Duration(milliseconds: 0),
+      const Duration(milliseconds: 500),
       () {
         final word = ref.read(wordGameStateProvider).correctWord;
         if (word.isNotEmpty) {
@@ -154,7 +192,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ThemeData theme, wordGameState) {
+  PreferredSizeWidget _buildAppBar(ThemeData theme, WordGameState wordGameState) {
     return AppBar(
       automaticallyImplyLeading: false,
       title: const Text('Read Mode'),
@@ -199,7 +237,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     );
   }
 
-  Widget _buildSpeechContent(ThemeData theme, wordGameState) {
+  Widget _buildSpeechContent(ThemeData theme, WordGameState wordGameState) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -207,7 +245,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildSpeakerButton(theme),
-            const SizedBox(height: 50),
+            const SizedBox(height: 20),
+            Text(
+              'Attempts: ${wordGameState.incorrectAttempts}/3',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: _startSpeechRecognition,
               child: const Text('Start Speaking'),
@@ -248,11 +291,19 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     );
   }
 
-  Widget _buildPauseButton(ThemeData theme, wordGameState) {
+  Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 32),
       child: FloatingActionButton(
-        onPressed: wordGameState.isPaused ? null : widget.pauseTimer,
+        onPressed: () {
+          if (wordGameState.isPaused) {
+            widget.resumeTimer();
+            ref.read(wordGameStateProvider.notifier).togglePause();
+          } else {
+            widget.pauseTimer();
+            ref.read(wordGameStateProvider.notifier).togglePause();
+          }
+        },
         backgroundColor:
             wordGameState.isPaused ? Colors.grey : theme.colorScheme.primary,
         child: Icon(

@@ -298,16 +298,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.arrow_back),
-                                  label: const Text('Back to Home'),
-                                  onPressed: _handleExit,
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor:
-                                        theme.colorScheme.onPrimary,
-                                    backgroundColor: theme.colorScheme.primary,
-                                  ),
-                                ),
                               ],
                             ),
                           ),

@@ -6,7 +6,8 @@ class WordGameState {
   final List<String> userSelectedWords;
   final int startTime;
   final int elapsedTime;
-  final bool isPaused; // Add the pause state here
+  final int incorrectAttempts;
+  final bool isPaused;
 
   WordGameState({
     required this.correctWord,
@@ -14,10 +15,11 @@ class WordGameState {
     this.answeredQuestions = const [],
     this.answeredCorrectly = const [],
     this.userSelectedWords = const [],
-    int? startTime,
+    this.startTime = 0,
     this.elapsedTime = 0,
-    this.isPaused = false, // Default to not paused
-  }) : startTime = startTime ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    this.incorrectAttempts = 0,
+    this.isPaused = false,
+  });
 
   WordGameState copyWith({
     String? correctWord,
@@ -27,17 +29,19 @@ class WordGameState {
     List<String>? userSelectedWords,
     int? startTime,
     int? elapsedTime,
-    bool? isPaused, // Add the isPaused argument here
+    int? incorrectAttempts,
+    bool? isPaused,
   }) {
     return WordGameState(
       correctWord: correctWord ?? this.correctWord,
-      options: options ?? this.options, 
+      options: options ?? this.options,
       answeredQuestions: answeredQuestions ?? this.answeredQuestions,
       answeredCorrectly: answeredCorrectly ?? this.answeredCorrectly,
       userSelectedWords: userSelectedWords ?? this.userSelectedWords,
       startTime: startTime ?? this.startTime,
       elapsedTime: elapsedTime ?? this.elapsedTime,
-      isPaused: isPaused ?? this.isPaused, // Use the passed value or retain the current one
+      incorrectAttempts: incorrectAttempts ?? this.incorrectAttempts,
+      isPaused: isPaused ?? this.isPaused,
     );
   }
 }

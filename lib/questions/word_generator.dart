@@ -49,8 +49,8 @@ class WordGameService {
       throw Exception('No items found for type $listType');
     }
 
-    print('List Type: $listType'); // Debug statement
-    print('All Items: $allItems'); // Debug statement
+    print('Generating new round with List Type: $listType'); // Debug
+    print('All Items: $allItems'); // Debug
 
     String correctItem = allItems[Random().nextInt(allItems.length)];
     List<String> options = _generateOptions(correctItem, allItems);
@@ -63,6 +63,9 @@ class WordGameService {
       userSelectedWords: previousState?.userSelectedWords ?? [],
       startTime: previousState?.startTime ??
           DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      elapsedTime: previousState?.elapsedTime ?? 0,
+      incorrectAttempts: 0,
+      isPaused: previousState?.isPaused ?? false,
     );
   }
 
@@ -75,47 +78,69 @@ class WordGameService {
     return options;
   }
 
-  WordGameState handleAnswer(WordGameState currentState, String selectedItem) {
+  WordGameState handleAnswer(WordGameState currentState, String selectedItem, String listType) {
     bool isCorrect = selectedItem.toLowerCase().trim() ==
         currentState.correctWord.toLowerCase().trim();
 
     int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     int elapsedTime = currentTime - currentState.startTime;
 
-    return currentState.copyWith(
-      answeredQuestions: [
-        ...currentState.answeredQuestions,
-        currentState.correctWord
-      ],
-      answeredCorrectly: [...currentState.answeredCorrectly, isCorrect],
-      userSelectedWords: [...currentState.userSelectedWords, selectedItem],
-      elapsedTime: elapsedTime,
-    );
+    print('Handling answer: $selectedItem, Correct: $isCorrect, Attempts: ${currentState.incorrectAttempts}'); // Debug
+
+    if (isCorrect) {
+      print('Correct answer, resetting attempts'); // Debug
+      return currentState.copyWith(
+        answeredQuestions: [
+          ...currentState.answeredQuestions,
+          currentState.correctWord
+        ],
+        answeredCorrectly: [...currentState.answeredCorrectly, true],
+        userSelectedWords: [...currentState.userSelectedWords, selectedItem],
+        elapsedTime: elapsedTime,
+        incorrectAttempts: 0,
+      );
+    } else {
+      final newAttempts = currentState.incorrectAttempts + 1;
+      print('Incorrect answer, new attempts: $newAttempts'); // Debug
+      if (newAttempts >= 3) {
+        print('Regenerating word after 3 incorrect attempts'); // Debug
+        final allItems = _getSentencesFromList(listType);
+        String newCorrectItem = allItems[Random().nextInt(allItems.length)];
+        List<String> newOptions = _generateOptions(newCorrectItem, allItems);
+        return currentState.copyWith(
+          correctWord: newCorrectItem,
+          options: newOptions,
+          incorrectAttempts: 0,
+          elapsedTime: elapsedTime,
+        );
+      } else {
+        return currentState.copyWith(
+          incorrectAttempts: newAttempts,
+          elapsedTime: elapsedTime,
+        );
+      }
+    }
   }
 }
 
-// Update the provider
 final contentTypeProvider = StateProvider<String>((ref) => '3');
 
-// Provider for the service
 final wordLengthProvider = StateProvider<String>((ref) => '3');
 
-// Provider for the service
 final wordGameServiceProvider = Provider<WordGameService>((ref) {
   return WordGameService();
 });
 
-// Update the StateNotifierProvider to use String type
 final wordGameStateProvider =
     StateNotifierProvider<WordGameStateNotifier, WordGameState>((ref) {
   final service = ref.read(wordGameServiceProvider);
-  final listType = ref.watch(contentTypeProvider); // Ensure this is correct
+  final listType = ref.watch(contentTypeProvider);
   return WordGameStateNotifier(service, listType);
 });
 
 class WordGameStateNotifier extends StateNotifier<WordGameState> {
   final WordGameService _service;
-  final String _listType; // Changed from int to String
+  final String _listType;
 
   WordGameStateNotifier(this._service, this._listType)
       : super(WordGameState(correctWord: '', options: [])) {
@@ -130,19 +155,28 @@ class WordGameStateNotifier extends StateNotifier<WordGameState> {
     state = _service.generateNewRound(state, _listType);
   }
 
-  // Rest of the methods remain the same
   void handleAnswer(String selectedWord) {
-    state = _service.handleAnswer(state, selectedWord);
-    generateNewRound();
+    state = _service.handleAnswer(state, selectedWord, _listType);
+    if (state.answeredCorrectly.isNotEmpty &&
+        state.answeredCorrectly.last == true) {
+      generateNewRound();
+    }
+  }
+
+  void togglePause() {
+    state = state.copyWith(isPaused: !state.isPaused);
   }
 
   void quitGame() {
     state = WordGameState(
-        correctWord: '',
-        options: [],
-        answeredQuestions: [],
-        answeredCorrectly: [],
-        userSelectedWords: []);
+      correctWord: '',
+      options: [],
+      answeredQuestions: [],
+      answeredCorrectly: [],
+      userSelectedWords: [],
+      incorrectAttempts: 0,
+      isPaused: false,
+    );
   }
 
   void clearGameState() {
@@ -153,6 +187,8 @@ class WordGameStateNotifier extends StateNotifier<WordGameState> {
       answeredCorrectly: [],
       userSelectedWords: [],
       elapsedTime: 0,
+      incorrectAttempts: 0,
+      isPaused: false,
     );
   }
 
