@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/practice_screen/practice_screen.dart';
 import 'package:word_app/questions/word_generator.dart';
+import 'package:word_app/questions/content_type.dart';
 import 'drawer.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'read');
@@ -13,7 +14,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Word Guessing Game'),
@@ -46,23 +46,52 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 20),
-            _buildDropdownCard<String>(
+            _buildDropdownCard<ContentType>(
               context,
               title: 'Content Type',
               value: ref.watch(contentTypeProvider),
               items: [
-                const DropdownMenuItem(value: '7a', child: Text('7A Sentences')),
-                const DropdownMenuItem(value: '6a', child: Text('6A Sentences')),
-                const DropdownMenuItem(value: '5a', child: Text('5A Sentences')),
-                const DropdownMenuItem(value: '4a', child: Text('4A Sentences')),
-                const DropdownMenuItem(value: '3a', child: Text('3A Sentences')),
-                const DropdownMenuItem(value: '2a', child: Text('2A Sentences')),
-                ...['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
-                    .map((length) => DropdownMenuItem<String>(
-                          value: length,
-                          child: Text('$length Letter Words'),
-                        ))
-                    .toList(),
+                const DropdownMenuItem(
+                    value: ContentType.kumon7a, child: Text('7A Sentences')),
+                const DropdownMenuItem(
+                    value: ContentType.kumon6a, child: Text('6A Sentences')),
+                const DropdownMenuItem(
+                    value: ContentType.kumon5a, child: Text('5A Sentences')),
+                const DropdownMenuItem(
+                    value: ContentType.kumon4a, child: Text('4A Sentences')),
+                const DropdownMenuItem(
+                    value: ContentType.kumon3a, child: Text('3A Sentences')),
+                const DropdownMenuItem(
+                    value: ContentType.kumon2a, child: Text('2A Sentences')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength3, child: Text('3 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength4, child: Text('4 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength5, child: Text('5 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength6, child: Text('6 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength7, child: Text('7 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength8, child: Text('8 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength9, child: Text('9 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength10,
+                    child: Text('10 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength11,
+                    child: Text('11 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength12,
+                    child: Text('12 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength13,
+                    child: Text('13 Letter Words')),
+                const DropdownMenuItem(
+                    value: ContentType.wordLength14,
+                    child: Text('14 Letter Words')),
               ],
               onChanged: (value) {
                 if (value != null) {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:word_app/questions/content_type.dart';
 
 class QuizHistoryService {
   static const String _key = 'word_game_quiz_history';
@@ -7,7 +8,7 @@ class QuizHistoryService {
   static Future<void> saveQuiz({
     required String title,
     required String timestamp,
-    required String contentType,
+    required ContentType contentType,
     required String gameMode,
     required int totalTime,
     required List<String> answeredQuestions,
@@ -20,7 +21,7 @@ class QuizHistoryService {
     Map<String, dynamic> quizData = {
       'title': title,
       'timestamp': timestamp,
-      'contentType': contentType,
+      'contentType': contentType.name,
       'gameMode': gameMode,
       'totalTime': totalTime,
       'questions': answeredQuestions,
@@ -37,7 +38,11 @@ class QuizHistoryService {
   static Future<List<Map<String, dynamic>>> getQuizzes() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> storedQuizzes = prefs.getStringList(_key) ?? [];
-    return storedQuizzes.map((string) => jsonDecode(string) as Map<String, dynamic>).toList();
+    return storedQuizzes.map((string) {
+      final quizData = jsonDecode(string) as Map<String, dynamic>;
+      quizData['contentType'] = ContentType.fromName(quizData['contentType']);
+      return quizData;
+    }).toList();
   }
 
   static Future<void> removeQuiz(String title) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:word_app/quiz_history/quiz_history_service.dart';
 import 'package:word_app/screens/result_screen/result_screen.dart';
+import 'package:word_app/questions/content_type.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
   final Function switchToStartScreen;
@@ -191,7 +192,9 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            'Score: ${quiz['correctCount']}/${quiz['totalQuestions']} | Time: ${(quiz['totalTime'] ~/ 60)}:${(quiz['totalTime'] % 60).toString().padLeft(2, '0')}',
+                            'Score: ${quiz['correctCount']}/${quiz['totalQuestions']} | '
+                            'Type: ${(quiz['contentType'] as ContentType).displayName} | '
+                            'Time: ${(quiz['totalTime'] ~/ 60)}:${(quiz['totalTime'] % 60).toString().padLeft(2, '0')}',
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.edit),
