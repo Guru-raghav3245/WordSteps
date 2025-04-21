@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../questions/speech_recog.dart';
-import '../../questions/tts_translator.dart';
 import '/questions/word_generator.dart';
 import 'package:word_app/models/word_game_state.dart';
 import 'confetti_helper.dart';
@@ -39,7 +38,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _speechRecognitionService = ref.read(speechRecognitionServiceProvider);
     confettiManager = ConfettiManager();
     _initializeSpeech();
-    _speakInitialWord();
   }
 
   @override
@@ -47,13 +45,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _speechRecognitionService.stopListening();
     confettiManager.dispose();
     super.dispose();
-  }
-
-  void _speakInitialWord() {
-    final word = ref.read(wordGameStateProvider).correctWord;
-    if (word.isNotEmpty) {
-      ref.read(ttsServiceProvider).speak(word, ref);
-    }
   }
 
   Future<void> _initializeSpeech() async {
@@ -121,8 +112,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             } else {
               confettiManager.wrongConfettiController.play();
             }
-
-            _speakNextWord();
           },
         );
       }
@@ -139,22 +128,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         isListening = false;
       });
     }
-  }
-
-  void _speakNextWord() {
-    Future.delayed(
-      const Duration(milliseconds: 500),
-      () {
-        final word = ref.read(wordGameStateProvider).correctWord;
-        if (word.isNotEmpty) {
-          _speakWord(word);
-        }
-      },
-    );
-  }
-
-  void _speakWord(String word) {
-    ref.read(ttsServiceProvider).speak(word, ref);
   }
 
   String _formatTime(int seconds) {
