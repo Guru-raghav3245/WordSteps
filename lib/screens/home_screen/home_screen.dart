@@ -13,10 +13,16 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WordSteps', textAlign: TextAlign.left,),
+        title: const Text(
+          'WordSteps',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: false,
+        elevation: 2,
+        shadowColor: theme.shadowColor,
       ),
       drawer: const AppDrawer(),
       body: Padding(
@@ -24,7 +30,7 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/Icon_HomePage.png', width: 250,),
+            Image.asset('assets/Icon_HomePage.png', width: 250),
             const SizedBox(height: 40),
             _buildDropdownCard(
               context,
@@ -32,11 +38,24 @@ class HomeScreen extends ConsumerWidget {
               value: ref.watch(gameModeProvider),
               items: const [
                 DropdownMenuItem(value: 'read', child: Text('Listen Mode')),
-                DropdownMenuItem(value: 'listen', child: Text('Read Mode')),
+                DropdownMenuItem(
+                  value: 'listen',
+                  child: Text('Read Mode (Work in Progress)'),
+                ),
               ],
               onChanged: (value) {
-                if (value != null) {
+                if (value != null && value != 'listen') {
                   ref.read(gameModeProvider.notifier).state = value;
+                } else if (value == 'listen') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Read Mode is under development and not available yet.',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                      backgroundColor: theme.colorScheme.surface,
+                    ),
+                  );
                 }
               },
             ),
@@ -123,18 +142,59 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: theme.textTheme.titleLarge),
-            DropdownButton<T>(
-              value: value,
-              underline: const SizedBox(),
-              items: items,
-              onChanged: onChanged,
-              style: theme.textTheme.bodyLarge,
+            Flexible(
+              flex: 1,
+              child: Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Flexible(
+              flex: 3, // Increased flex to allow more space for dropdown text
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                underline: const SizedBox(),
+                items: items.map((item) {
+                  if (item.value == 'listen') {
+                    return DropdownMenuItem<T>(
+                      value: item.value,
+                      enabled: false,
+                      child: Text(
+                        'Read Mode (Work in Progress)',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }
+                  return DropdownMenuItem<T>(
+                    value: item.value,
+                    child: Text(
+                      item.child.toString().replaceAll('Text("', '').replaceAll('")', ''),
+                      style: theme.textTheme.bodyLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: onChanged,
+                style: theme.textTheme.bodyLarge,
+                dropdownColor: theme.cardTheme.color ?? theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ],
         ),
@@ -153,8 +213,18 @@ class HomeScreen extends ConsumerWidget {
       width: MediaQuery.of(context).size.width * 0.7,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: theme.elevatedButtonTheme.style,
-        child: Text(label, style: const TextStyle(fontSize: 18)),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 3,
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

@@ -157,6 +157,7 @@ class SupportScreen extends StatelessWidget {
                           icon: const Icon(Icons.send),
                           label: const Text('Open Gmail'),
                           style: ElevatedButton.styleFrom(
+                            iconColor: Colors.white,
                             padding: EdgeInsets.symmetric(
                               horizontal: isTablet ? 30 : 20,
                               vertical: isTablet ? 16 : 12,
