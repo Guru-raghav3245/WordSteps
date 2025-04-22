@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:word_app/models/word_game_state.dart';
 import 'package:word_app/questions/content_type.dart';
 import 'sentence_list.dart';
+import 'package:string_similarity/string_similarity.dart';
 
 class WordGameService {
   List<String> _getSentencesFromList(ContentType contentType) {
@@ -88,16 +89,37 @@ class WordGameService {
     return options;
   }
 
-  WordGameState handleAnswer(
-      WordGameState currentState, String selectedItem, ContentType contentType) {
-    bool isCorrect = selectedItem.toLowerCase().trim() ==
-        currentState.correctWord.toLowerCase().trim();
+  WordGameState handleAnswer(WordGameState currentState, String selectedItem,
+      ContentType contentType) {
+    // Normalize both strings: remove punctuation, extra spaces, and convert to lowercase
+    String normalizedSelected = selectedItem
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), '') // Remove punctuation
+        .replaceAll(
+            RegExp(r'\s+'), ' ') // Normalize multiple spaces to single space
+        .trim();
+    String normalizedCorrect = currentState.correctWord
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    bool isCorrect = normalizedSelected == normalizedCorrect;
+
+    // Optional: Use string similarity if exact match fails (e.g., for minor typos)
+    if (!isCorrect && normalizedSelected.isNotEmpty) {
+      double similarity = normalizedSelected.similarityTo(normalizedCorrect);
+      if (similarity > 0.9) {
+        // Threshold for similarity (adjust as needed)
+        isCorrect = true;
+      }
+    }
 
     int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     int elapsedTime = currentTime - currentState.startTime;
 
     print(
-        'Handling answer: $selectedItem, Correct: $isCorrect, Attempts: ${currentState.incorrectAttempts}'); // Debug
+        'Handling answer: $selectedItem, Normalized: $normalizedSelected, Correct: $normalizedCorrect, IsCorrect: $isCorrect, Attempts: ${currentState.incorrectAttempts}'); // Debug
 
     if (isCorrect) {
       print('Correct answer, resetting attempts'); // Debug

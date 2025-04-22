@@ -4,6 +4,7 @@ import '../../questions/speech_recog.dart';
 import '/questions/word_generator.dart';
 import 'package:word_app/models/word_game_state.dart';
 import 'confetti_helper.dart';
+import 'package:string_similarity/string_similarity.dart';
 
 class ReadModeScreen extends ConsumerStatefulWidget {
   final int elapsedTime;
@@ -80,7 +81,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   }
 
   void _startSpeechRecognition() async {
-
     try {
       if (!_speechRecognitionService.isListening) {
         setState(() {
@@ -93,21 +93,50 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           onResult: (recognizedWord) {
             if (!mounted) return;
 
-            print('Recognized word: $recognizedWord'); // Debug
+            print('Raw Recognized word: $recognizedWord'); // Debug raw input
             setState(() {
-              _recognizedWord = recognizedWord.isEmpty ? 'No match' : recognizedWord;
+              _recognizedWord =
+                  recognizedWord.isEmpty ? 'No match' : recognizedWord;
             });
 
-            final previousAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
-            final previousWord = ref.read(wordGameStateProvider).correctWord;
+            final currentState = ref.read(wordGameStateProvider);
+            final previousWord = currentState.correctWord;
             ref.read(wordGameStateProvider.notifier).handleAnswer(
-                recognizedWord.isEmpty || recognizedWord == 'NO_MATCH' ? 'NO_MATCH' : recognizedWord);
+                recognizedWord.isEmpty || recognizedWord == 'NO_MATCH'
+                    ? 'NO_MATCH'
+                    : recognizedWord);
 
             final newState = ref.read(wordGameStateProvider);
             print('Incorrect attempts: ${newState.incorrectAttempts}'); // Debug
-            if (recognizedWord.toLowerCase().trim() == previousWord.toLowerCase().trim()) {
+            print('Correct word: $previousWord'); // Debug correct word
+            print('Recognized word: $_recognizedWord'); // Debug recognized word
+
+            // Normalize both strings for comparison
+            String normalizedRecognized = recognizedWord
+                .toLowerCase()
+                .replaceAll(RegExp(r'[^\w\s]'), '')
+                .replaceAll(RegExp(r'\s+'), ' ')
+                .trim();
+            String normalizedPrevious = previousWord
+                .toLowerCase()
+                .replaceAll(RegExp(r'[^\w\s]'), '')
+                .replaceAll(RegExp(r'\s+'), ' ')
+                .trim();
+
+            print(
+                'Normalized Recognized: $normalizedRecognized'); // Debug normalized
+            print(
+                'Normalized Correct: $normalizedPrevious'); // Debug normalized
+
+            double similarity =
+                normalizedRecognized.similarityTo(normalizedPrevious);
+            print('Similarity score: $similarity'); // Debug similarity
+
+            if (similarity > 0.7) {
+              // Lowered threshold for testing
               confettiManager.correctConfettiController.play();
-            } else if (newState.incorrectAttempts == 0 && previousAttempts >= 2) {
+            } else if (newState.incorrectAttempts == 0 &&
+                currentState.incorrectAttempts >= 2) {
               confettiManager.wrongConfettiController.play();
             } else {
               confettiManager.wrongConfettiController.play();
@@ -165,7 +194,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ThemeData theme, WordGameState wordGameState) {
+  PreferredSizeWidget _buildAppBar(
+      ThemeData theme, WordGameState wordGameState) {
     return AppBar(
       automaticallyImplyLeading: false,
       title: const Text('Read Mode'),

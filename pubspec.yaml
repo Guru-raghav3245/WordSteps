@@ -27,6 +27,7 @@ dependencies:
   permission_handler: ^12.0.0+1
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.1
+  string_similarity: ^2.1.1
 
 dev_dependencies:
   flutter_test:
@@ -37,24 +38,26 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/Icon.png
+    - assets/Icon2.png
+    - assets/Icon_HomePage.png
 
 
 flutter_launcher_icons:
   android: "launcher_icon"
-  image_path: "assets/Icon.png"
+  image_path: "assets/Icon2.png"
   min_sdk_android: 21 # Optional, for Android
 
 flutter_native_splash:
-  color: "#A6A6A6"  # Light gray from the icon
-  image: assets/Icon.png
-  color_dark: "#A6A6A6"  # Same color for dark mode consistency
-  image_dark: assets/Icon.png
+  color: "#ffffff"  # Sets background color to white
+  image: assets/Icon2.png
+  image_dark: assets/Icon2.png
   android_12:
-    color: "#A6A6A6"
-    image: assets/Icon.png
-    color_dark: "#A6A6A6"
-    image_dark: assets/Icon.png
+    image: assets/Icon2.png
+    image_dark: assets/Icon2.png
   ios: true
   android: true
   fullscreen: true
+
+
+# flutter pub run flutter_native_splash:create
+# flutter pub run flutter_launcher_icons

@@ -13,11 +13,10 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Word Guessing Game'),
-        centerTitle: true,
+        title: const Text('WordSteps', textAlign: TextAlign.left,),
+        centerTitle: false,
       ),
       drawer: const AppDrawer(),
       body: Padding(
@@ -25,11 +24,7 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Welcome to the Word Guessing Game!',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineMedium,
-            ),
+            Image.asset('assets/Icon_HomePage.png', width: 250,),
             const SizedBox(height: 40),
             _buildDropdownCard(
               context,
