@@ -91,13 +91,13 @@ class WordGameService {
 
   WordGameState handleAnswer(WordGameState currentState, String selectedItem,
       ContentType contentType) {
-    // Normalize both strings: remove punctuation, extra spaces, and convert to lowercase
+    // Normalize both strings for comparison
     String normalizedSelected = selectedItem
         .toLowerCase()
         .replaceAll(RegExp(r'[^\w\s]'), '') // Remove punctuation
-        .replaceAll(
-            RegExp(r'\s+'), ' ') // Normalize multiple spaces to single space
+        .replaceAll(RegExp(r'\s+'), ' ') // Normalize spaces
         .trim();
+
     String normalizedCorrect = currentState.correctWord
         .toLowerCase()
         .replaceAll(RegExp(r'[^\w\s]'), '')
@@ -106,11 +106,11 @@ class WordGameService {
 
     bool isCorrect = normalizedSelected == normalizedCorrect;
 
-    // Optional: Use string similarity if exact match fails (e.g., for minor typos)
+    // Use string similarity for minor variations
     if (!isCorrect && normalizedSelected.isNotEmpty) {
       double similarity = normalizedSelected.similarityTo(normalizedCorrect);
       if (similarity > 0.9) {
-        // Threshold for similarity (adjust as needed)
+        // 90% similarity threshold
         isCorrect = true;
       }
     }
@@ -118,42 +118,28 @@ class WordGameService {
     int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     int elapsedTime = currentTime - currentState.startTime;
 
-    print(
-        'Handling answer: $selectedItem, Normalized: $normalizedSelected, Correct: $normalizedCorrect, IsCorrect: $isCorrect, Attempts: ${currentState.incorrectAttempts}'); // Debug
+    // Get new question
+    final allItems = _getSentencesFromList(contentType);
+    String newCorrectItem = allItems[Random().nextInt(allItems.length)];
+    List<String> newOptions = _generateOptions(newCorrectItem, allItems);
 
-    if (isCorrect) {
-      print('Correct answer, resetting attempts'); // Debug
-      return currentState.copyWith(
-        answeredQuestions: [
-          ...currentState.answeredQuestions,
-          currentState.correctWord
-        ],
-        answeredCorrectly: [...currentState.answeredCorrectly, true],
-        userSelectedWords: [...currentState.userSelectedWords, selectedItem],
-        elapsedTime: elapsedTime,
-        incorrectAttempts: 0,
-      );
-    } else {
-      final newAttempts = currentState.incorrectAttempts + 1;
-      print('Incorrect answer, new attempts: $newAttempts'); // Debug
-      if (newAttempts >= 3) {
-        print('Regenerating word after 3 incorrect attempts'); // Debug
-        final allItems = _getSentencesFromList(contentType);
-        String newCorrectItem = allItems[Random().nextInt(allItems.length)];
-        List<String> newOptions = _generateOptions(newCorrectItem, allItems);
-        return currentState.copyWith(
-          correctWord: newCorrectItem,
-          options: newOptions,
-          incorrectAttempts: 0,
-          elapsedTime: elapsedTime,
-        );
-      } else {
-        return currentState.copyWith(
-          incorrectAttempts: newAttempts,
-          elapsedTime: elapsedTime,
-        );
-      }
-    }
+    return WordGameState(
+      correctWord: newCorrectItem,
+      options: newOptions,
+      answeredQuestions: [
+        ...currentState.answeredQuestions,
+        currentState.correctWord // Store the original correct word
+      ],
+      answeredCorrectly: [...currentState.answeredCorrectly, isCorrect],
+      userSelectedWords: [
+        ...currentState.userSelectedWords,
+        selectedItem // Store exactly what user said/selected
+      ],
+      startTime: currentState.startTime,
+      elapsedTime: elapsedTime,
+      incorrectAttempts: 0, // Reset since we're moving to next question
+      isPaused: currentState.isPaused,
+    );
   }
 }
 
@@ -192,10 +178,7 @@ class WordGameStateNotifier extends StateNotifier<WordGameState> {
 
   void handleAnswer(String selectedWord) {
     state = _service.handleAnswer(state, selectedWord, _contentType);
-    if (state.answeredCorrectly.isNotEmpty &&
-        state.answeredCorrectly.last == true) {
-      generateNewRound();
-    }
+    // No need for additional logic since service already generates new question
   }
 
   void togglePause() {

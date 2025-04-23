@@ -5,6 +5,14 @@ import 'package:word_app/questions/content_type.dart';
 class QuizHistoryService {
   static const String _key = 'word_game_quiz_history';
 
+  // Helper method to capitalize game mode
+  static String _capitalizeGameMode(String gameMode) {
+    return gameMode
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
+
   static Future<void> saveQuiz({
     required String title,
     required String timestamp,
@@ -66,7 +74,7 @@ class QuizHistoryService {
     int suffix = 2;
 
     while (quizzes.any((quiz) => quiz['title'] == newTitle)) {
-      newTitle = '$baseTitle-$suffix';
+      newTitle = '$baseTitle #$suffix';
       suffix++;
     }
     return newTitle;
@@ -79,11 +87,16 @@ class QuizHistoryService {
         .map((string) => jsonDecode(string) as Map<String, dynamic>)
         .toList();
 
+    // Ensure the new title is valid
+    if (newTitle.isEmpty || newTitle.length > 100) {
+      throw Exception('Title must be between 1 and 100 characters.');
+    }
+
     String uniqueNewTitle = newTitle;
     int suffix = 2;
     while (quizzes.any((quiz) =>
         quiz['title'] == uniqueNewTitle && quiz['title'] != oldTitle)) {
-      uniqueNewTitle = '$newTitle-$suffix';
+      uniqueNewTitle = '$newTitle #$suffix';
       suffix++;
     }
 
@@ -96,5 +109,12 @@ class QuizHistoryService {
       }
     }
     await prefs.setStringList(_key, storedQuizzes);
+  }
+
+  // Modified to generate human-friendly titles
+  static String generateBaseTitle(ContentType contentType, String gameMode) {
+    final contentDisplayName = contentType.displayName;
+    final formattedGameMode = _capitalizeGameMode(gameMode);
+    return '$contentDisplayName $formattedGameMode Quiz';
   }
 }

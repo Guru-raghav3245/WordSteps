@@ -67,17 +67,17 @@ class HomeScreen extends ConsumerWidget {
                 value: ref.watch(contentTypeProvider),
                 items: [
                   const DropdownMenuItem(
-                      value: ContentType.kumon7a, child: Text('7A Sentences')),
+                      value: ContentType.kumon7a, child: Text('7A Sentences (Coming Soon)')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon6a, child: Text('6A Sentences')),
+                      value: ContentType.kumon6a, child: Text('6A Sentences (Coming Soon)')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon5a, child: Text('5A Sentences')),
+                      value: ContentType.kumon5a, child: Text('5A Sentences (Coming Soon)')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon4a, child: Text('4A Sentences')),
+                      value: ContentType.kumon4a, child: Text('4A Sentences (Coming Soon)')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon3a, child: Text('3A Sentences')),
+                      value: ContentType.kumon3a, child: Text('3A Sentences (Coming Soon)')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon2a, child: Text('2A Sentences')),
+                      value: ContentType.kumon2a, child: Text('2A Sentences (Coming Soon)')),
                   const DropdownMenuItem(
                       value: ContentType.wordLength3,
                       child: Text('3 Letter Words')),
@@ -117,7 +117,25 @@ class HomeScreen extends ConsumerWidget {
                 ],
                 onChanged: (value) {
                   if (value != null) {
-                    ref.read(contentTypeProvider.notifier).state = value;
+                    // Show snackbar if trying to select a sentence option
+                    if (value == ContentType.kumon7a ||
+                        value == ContentType.kumon6a ||
+                        value == ContentType.kumon5a ||
+                        value == ContentType.kumon4a ||
+                        value == ContentType.kumon3a ||
+                        value == ContentType.kumon2a) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Sentence modes are under development and not available yet.',
+                            style: TextStyle(color: theme.colorScheme.onSurface),
+                          ),
+                          backgroundColor: theme.colorScheme.surface,
+                        ),
+                      );
+                    } else {
+                      ref.read(contentTypeProvider.notifier).state = value;
+                    }
                   }
                 },
               ),
@@ -178,12 +196,22 @@ class HomeScreen extends ConsumerWidget {
                 isExpanded: true,
                 underline: const SizedBox(),
                 items: items.map((item) {
-                  if (item.value == 'listen') {
+                  // Disable all Kumon sentence options and read mode
+                  if ((item.value is ContentType && 
+                      (item.value == ContentType.kumon7a ||
+                       item.value == ContentType.kumon6a ||
+                       item.value == ContentType.kumon5a ||
+                       item.value == ContentType.kumon4a ||
+                       item.value == ContentType.kumon3a ||
+                       item.value == ContentType.kumon2a)) ||
+                      item.value == 'listen') {
                     return DropdownMenuItem<T>(
                       value: item.value,
                       enabled: false,
                       child: Text(
-                        'Read Mode (Work in Progress)',
+                        item.child.toString()
+                            .replaceAll('Text("', '')
+                            .replaceAll('")', ''),
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontStyle: FontStyle.italic,
@@ -194,8 +222,7 @@ class HomeScreen extends ConsumerWidget {
                   return DropdownMenuItem<T>(
                     value: item.value,
                     child: Text(
-                      item.child
-                          .toString()
+                      item.child.toString()
                           .replaceAll('Text("', '')
                           .replaceAll('")', ''),
                       style: theme.textTheme.bodyLarge,
@@ -204,8 +231,7 @@ class HomeScreen extends ConsumerWidget {
                 }).toList(),
                 onChanged: onChanged,
                 style: theme.textTheme.bodyLarge,
-                dropdownColor:
-                    theme.cardTheme.color ?? theme.colorScheme.surface,
+                dropdownColor: theme.cardTheme.color ?? theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -228,8 +254,7 @@ class HomeScreen extends ConsumerWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 3,
         ),
         child: Text(
