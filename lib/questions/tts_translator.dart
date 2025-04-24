@@ -10,7 +10,7 @@ class TTSService {
     final double pitch = ref.read(pitchProvider);
     final double speechRate = ref.read(speechRateProvider);
 
-    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setLanguage('en-IN');
     await _flutterTts.setPitch(pitch);
     await _flutterTts.setSpeechRate(speechRate);
     await _flutterTts.setVolume(volume);
