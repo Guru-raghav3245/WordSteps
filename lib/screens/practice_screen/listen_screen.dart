@@ -41,6 +41,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   bool _canTap = true;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
+  double _volume = 1.0; // Volume ranges from 0.0 to 1.0
 
   @override
   void initState() {
@@ -54,6 +55,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
     _speakInitialWord();
+    // Initialize volume from TTS service
+    _volume = ref.read(ttsServiceProvider).volume;
   }
 
   void _speakInitialWord() {
@@ -82,13 +85,78 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           SafeArea(
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   children: [
                     const Spacer(),
                     _buildMainContent(theme, wordGameState),
                     const Spacer(),
                     _buildPauseButton(theme),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Improved Volume Slider at the bottom
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.volume_mute,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 4,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                          activeTrackColor: theme.colorScheme.primary,
+                          inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.3),
+                          thumbColor: theme.colorScheme.primary,
+                          overlayColor: theme.colorScheme.primary.withOpacity(0.2),
+                        ),
+                        child: Slider(
+                          value: _volume,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 20,
+                          onChanged: (value) {
+                            setState(() {
+                              _volume = value;
+                            });
+                            ref.read(ttsServiceProvider).setVolume(value);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.volume_up,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
                   ],
                 ),
               ),
@@ -111,7 +179,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ThemeData theme, WordGameState wordGameState) {
+  PreferredSizeWidget _buildAppBar(
+      ThemeData theme, WordGameState wordGameState) {
     return AppBar(
       automaticallyImplyLeading: false,
       title: const Text('Listen Mode'),
@@ -138,7 +207,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           tooltip: 'Quit Game',
         ),
         IconButton(
-          icon: Icon(Icons.check_circle_outline, color: theme.colorScheme.onPrimary),
+          icon: Icon(Icons.check_circle_outline,
+              color: theme.colorScheme.onPrimary),
           onPressed: widget.props.endQuiz,
           tooltip: 'End Quiz',
         ),
@@ -186,7 +256,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                      side: BorderSide(
+                          color: theme.colorScheme.primary.withOpacity(0.2)),
                     ),
                     child: Container(
                       decoration: BoxDecoration(
@@ -207,7 +278,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                               height: 60,
                               child: CircularProgressIndicator(
                                 strokeWidth: 4,
-                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    theme.colorScheme.primary),
                               ),
                             )
                           : Icon(
@@ -231,10 +303,13 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                   child: ElevatedButton(
                     onPressed: () => _handleWordSelection(word),
                     style: theme.elevatedButtonTheme.style?.copyWith(
-                      backgroundColor: MaterialStateProperty.all(theme.colorScheme.primary),
-                      foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+                      backgroundColor:
+                          MaterialStateProperty.all(theme.colorScheme.primary),
+                      foregroundColor: MaterialStateProperty.all(
+                          theme.colorScheme.onPrimary),
                       shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     child: Text(
@@ -256,7 +331,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
 
   Widget _buildPauseButton(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: const EdgeInsets.only(bottom: 80), // Increased to avoid overlap with volume slider
       child: FloatingActionButton(
         onPressed: () {
           setState(() {
