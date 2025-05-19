@@ -331,7 +331,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
 
   Widget _buildPauseButton(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 80), // Increased to avoid overlap with volume slider
+      padding: const EdgeInsets.only(bottom: 80), 
       child: FloatingActionButton(
         onPressed: () {
           setState(() {

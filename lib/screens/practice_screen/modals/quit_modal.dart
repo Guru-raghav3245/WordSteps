@@ -9,22 +9,22 @@ class QuitDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Rounded corners for a modern look
+        borderRadius: BorderRadius.circular(16),
       ),
-      backgroundColor: Colors.white, // Clean and minimal background color
+      backgroundColor: Colors.white, 
       title: Column(
         mainAxisSize: MainAxisSize.min,
         children: const [
           Icon(
-            Icons.warning_amber_rounded, // Warning icon for emphasis
-            color: Color(0xFF009DDC), // Kumon blue
+            Icons.warning_amber_rounded, 
+            color: Color(0xFF009DDC),
             size: 40,
           ),
           SizedBox(height: 10),
           Text(
             'Quit Quiz?',
             style: TextStyle(
-              color: Color(0xFF009DDC), // Kumon blue
+              color: Color(0xFF009DDC),
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
@@ -36,15 +36,15 @@ class QuitDialog extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(color: Colors.black87),
       ),
-      actionsAlignment: MainAxisAlignment.spaceEvenly, // Align buttons horizontally
+      actionsAlignment: MainAxisAlignment.spaceEvenly, 
       actions: <Widget>[
         ElevatedButton(
           onPressed: () {
-            Navigator.pop(context); // Close the dialog
-            onQuit(); // Trigger the quit function
+            Navigator.pop(context); 
+            onQuit(); 
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red, // Red for the quit action
+            backgroundColor: Colors.red, 
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -61,10 +61,10 @@ class QuitDialog extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () {
-            Navigator.pop(context); // Close the dialog without quitting
+            Navigator.pop(context); 
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green, // Green for the cancel action
+            backgroundColor: Colors.green, 
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
