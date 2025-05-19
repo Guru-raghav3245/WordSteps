@@ -299,7 +299,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
               alignment: WrapAlignment.center,
               children: wordGameState.options.map((word) {
                 return SizedBox(
-                  width: 120,
+                  width: MediaQuery.of(context).size.width * 0.8, // Wider button
                   child: ElevatedButton(
                     onPressed: () => _handleWordSelection(word),
                     style: theme.elevatedButtonTheme.style?.copyWith(
@@ -311,13 +311,24 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
+                      padding: MaterialStateProperty.all(
+                        const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 20),
+                      ),
+                      minimumSize: MaterialStateProperty.all(
+                        const Size(0, 60),
+                      ),
                     ),
                     child: Text(
                       word,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: theme.colorScheme.onPrimary,
+                        fontSize: 16,
                       ),
                       textAlign: TextAlign.center,
+                      softWrap: true,
+                      maxLines: 3, 
+                      overflow: TextOverflow.ellipsis, 
                     ),
                   ),
                 );
@@ -331,7 +342,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
 
   Widget _buildPauseButton(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 80), 
+      padding: const EdgeInsets.only(bottom: 80),
       child: FloatingActionButton(
         onPressed: () {
           setState(() {

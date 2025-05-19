@@ -41,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
                   DropdownMenuItem(value: 'read', child: Text('Listen Mode')),
                   DropdownMenuItem(
                     value: 'listen',
-                    child: Text('Read Mode (Work in Progress)'),
+                    child: Text('Read Mode (Work in Progress)',),
                   ),
                 ],
                 onChanged: (value) {
@@ -68,22 +68,22 @@ class HomeScreen extends ConsumerWidget {
                 items: [
                   const DropdownMenuItem(
                       value: ContentType.kumon7a,
-                      child: Text('7A Sentences (Coming Soon)')),
+                      child: Text('7A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.kumon6a,
-                      child: Text('6A Sentences (Coming Soon)')),
+                      child: Text('6A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.kumon5a,
-                      child: Text('5A Sentences (Coming Soon)')),
+                      child: Text('5A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.kumon4a,
-                      child: Text('4A Sentences (Coming Soon)')),
+                      child: Text('4A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.kumon3a,
-                      child: Text('3A Sentences (Coming Soon)')),
+                      child: Text('3A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.kumon2a,
-                      child: Text('2A Sentences (Coming Soon)')),
+                      child: Text('2A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.wordLength3,
                       child: Text('3 Letter Words')),
@@ -121,31 +121,7 @@ class HomeScreen extends ConsumerWidget {
                       value: ContentType.wordLength14,
                       child: Text('14 Letter Words')),
                 ],
-                onChanged: (value) {
-                  if (value != null) {
-                    // Show snackbar if trying to select a sentence option
-                    if (value == ContentType.kumon7a ||
-                        value == ContentType.kumon6a ||
-                        value == ContentType.kumon5a ||
-                        value == ContentType.kumon4a ||
-                        value == ContentType.kumon3a ||
-                        value == ContentType.kumon2a) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Sentence modes are under development and not available yet.',
-                            style:
-                                TextStyle(color: theme.colorScheme.onSurface),
-                          ),
-                          backgroundColor: theme.colorScheme.surface,
-                        ),
-                      );
-                    } else {
-                      ref.read(contentTypeProvider.notifier).state = value;
-                    }
-                  }
-                },
-              ),
+                onChanged: (value) {ref.read(contentTypeProvider.notifier).state = value!;}),
               const SizedBox(height: 40),
               _buildActionButton(
                 context,
@@ -206,28 +182,6 @@ class HomeScreen extends ConsumerWidget {
                   items: items.map((item) {
                     // Extract the text content from the Text widget
                     final textContent = (item.child as Text).data ?? '';
-
-                    // Disable all Kumon sentence options and read mode
-                    if ((item.value is ContentType &&
-                            (item.value == ContentType.kumon7a ||
-                                item.value == ContentType.kumon6a ||
-                                item.value == ContentType.kumon5a ||
-                                item.value == ContentType.kumon4a ||
-                                item.value == ContentType.kumon3a ||
-                                item.value == ContentType.kumon2a)) ||
-                        item.value == 'listen') {
-                      return DropdownMenuItem<T>(
-                        value: item.value,
-                        enabled: false,
-                        child: Text(
-                          textContent,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      );
-                    }
                     return DropdownMenuItem<T>(
                       value: item.value,
                       child: Text(
