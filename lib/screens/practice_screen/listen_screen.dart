@@ -41,7 +41,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   bool _canTap = true;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
-  double _volume = 1.0; // Volume ranges from 0.0 to 1.0
+  double _volume = 1.0;
 
   @override
   void initState() {
@@ -55,7 +55,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
     _speakInitialWord();
-    // Initialize volume from TTS service
     _volume = ref.read(ttsServiceProvider).volume;
   }
 
@@ -98,7 +97,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
               ),
             ),
           ),
-          // Improved Volume Slider at the bottom
           Positioned(
             left: 16,
             right: 16,
@@ -106,7 +104,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
             child: SafeArea(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(16),
@@ -130,12 +129,16 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                       child: SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           trackHeight: 4,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                          thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 8),
+                          overlayShape:
+                              const RoundSliderOverlayShape(overlayRadius: 16),
                           activeTrackColor: theme.colorScheme.primary,
-                          inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.3),
+                          inactiveTrackColor:
+                              theme.colorScheme.primary.withOpacity(0.3),
                           thumbColor: theme.colorScheme.primary,
-                          overlayColor: theme.colorScheme.primary.withOpacity(0.2),
+                          overlayColor:
+                              theme.colorScheme.primary.withOpacity(0.2),
                         ),
                         child: Slider(
                           value: _volume,
@@ -299,7 +302,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
               alignment: WrapAlignment.center,
               children: wordGameState.options.map((word) {
                 return SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8, // Wider button
+                  width:
+                      MediaQuery.of(context).size.width * 0.8, // Wider button
                   child: ElevatedButton(
                     onPressed: () => _handleWordSelection(word),
                     style: theme.elevatedButtonTheme.style?.copyWith(
@@ -327,8 +331,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                       ),
                       textAlign: TextAlign.center,
                       softWrap: true,
-                      maxLines: 3, 
-                      overflow: TextOverflow.ellipsis, 
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 );
@@ -411,4 +415,5 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
+
 }

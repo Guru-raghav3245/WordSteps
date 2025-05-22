@@ -16,9 +16,9 @@ dependencies:
   flutter_riverpod: ^2.3.6
   flutter_tts: ^4.2.0
   english_words: ^4.0.0
-  speech_to_text: ^6.1.1
+  speech_to_text: ^7.0.0
   pdf: ^3.11.1
-  share_plus: ^10.1.4
+  share_plus: ^11.0.0
   confetti: ^0.8.0
   path_provider: ^2.1.5
   url_launcher: ^6.3.1
@@ -41,14 +41,14 @@ flutter:
     - assets/Icon2.png
     - assets/Icon_HomePage.png
 
-
+  
 flutter_launcher_icons:
   android: "launcher_icon"
   image_path: "assets/Icon2.png"
-  min_sdk_android: 21 # Optional, for Android
+  min_sdk_android: 21 
 
 flutter_native_splash:
-  color: "#ffffff"  # Sets background color to white
+  color: "#ffffff" 
   image: assets/Icon2.png
   image_dark: assets/Icon2.png
   android_12:
