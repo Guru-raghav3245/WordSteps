@@ -7,6 +7,27 @@ import 'sentence_list.dart';
 import 'package:string_similarity/string_similarity.dart';
 
 class WordGameService {
+  final List<String> _bannedWords = [
+    'sex',
+    'ass',
+    'damn',
+    'hell',
+    'crap',
+    'bastard',
+    'dumb',
+    'stupid',
+    'idiot',
+    'piss',
+    'shit',
+    'fuck'
+  ];
+
+  List<String> _filterBannedWords(List<String> words) {
+    return words
+        .where((word) => !_bannedWords.contains(word.toLowerCase()))
+        .toList();
+  }
+
   List<String> _getSentencesFromList(ContentType contentType) {
     switch (contentType) {
       case ContentType.kumon7a:
@@ -49,7 +70,8 @@ class WordGameService {
   }
 
   List<String> _getAllWordsOfLength(int length) {
-    return nouns.where((word) => word.length == length).toList();
+    return _filterBannedWords(
+        nouns.where((word) => word.length == length).toList());
   }
 
   WordGameState generateNewRound(
@@ -178,7 +200,6 @@ class WordGameStateNotifier extends StateNotifier<WordGameState> {
 
   void handleAnswer(String selectedWord) {
     state = _service.handleAnswer(state, selectedWord, _contentType);
-    // No need for additional logic since service already generates new question
   }
 
   void togglePause() {

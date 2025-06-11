@@ -3,16 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TTSService {
   final FlutterTts _flutterTts = FlutterTts();
-  double _volume = 1.0; // Default volume (0.0 to 1.0)
-  double _pitch = 1.0; // Default pitch
-  double _speechRate = 0.5; // Default speech rate
+  double _volume = 1.0; 
+  final double _pitch = 1.0; 
+  final double _speechRate = 0.5; 
 
-  // Getter for volume
   double get volume => _volume;
 
-  // Setter for volume
   Future<void> setVolume(double volume) async {
-    _volume = volume.clamp(0.0, 1.0); // Ensure volume is within valid range
+    _volume = volume.clamp(0.0, 1.0); 
     await _flutterTts.setVolume(_volume);
   }
 

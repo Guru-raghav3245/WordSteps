@@ -4,6 +4,7 @@ import '/questions/word_generator.dart';
 import '/questions/tts_translator.dart';
 import 'confetti_helper.dart';
 import 'package:word_app/models/word_game_state.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class GameScreenProps {
   final int elapsedTime;
@@ -36,7 +37,6 @@ class ListenModeScreen extends ConsumerStatefulWidget {
 class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     with SingleTickerProviderStateMixin {
   late final ConfettiManager confettiManager;
-  bool _isPaused = false;
   bool _isSpeaking = false;
   bool _canTap = true;
   late AnimationController _scaleController;
@@ -72,6 +72,41 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     super.dispose();
   }
 
+  Future<void> _sendReportEmail() async {
+    final wordGameState = ref.read(wordGameStateProvider);
+    final options = wordGameState.options;
+
+    // Compose the email body with the options
+    const String email = 'master.guru.raghav@gmail.com';
+    const String subject = 'WordSteps Listen Mode Report';
+    final String body =
+        'Reported Options:\n${options.map((option) => '- $option').join('\n')}';
+
+    final String gmailUrl =
+        'googlegmail:///mail/?to=$email&su=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}';
+    final String fallbackUrl =
+        'mailto:$email?subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(gmailUrl))) {
+        await launchUrl(Uri.parse(gmailUrl));
+      } else {
+        await launchUrl(Uri.parse(fallbackUrl));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Unable to open email client. Please try again or use master.guru.raghav@gmail.com manually.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -91,7 +126,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                     const Spacer(),
                     _buildMainContent(theme, wordGameState),
                     const Spacer(),
-                    _buildPauseButton(theme),
+                    _buildPauseButton(theme, wordGameState),
                   ],
                 ),
               ),
@@ -205,6 +240,11 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ),
         ),
         IconButton(
+          icon: Icon(Icons.report, color: theme.colorScheme.onPrimary),
+          onPressed: _sendReportEmail,
+          tooltip: 'Report Options',
+        ),
+        IconButton(
           icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
           onPressed: widget.props.showQuitDialog,
           tooltip: 'Quit Game',
@@ -221,22 +261,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   Widget _buildMainContent(ThemeData theme, WordGameState wordGameState) {
-    if (_isPaused) {
-      return Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Game Paused',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: theme.colorScheme.primary,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -344,23 +368,21 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     );
   }
 
-  Widget _buildPauseButton(ThemeData theme) {
+  Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 80),
       child: FloatingActionButton(
         onPressed: () {
-          setState(() {
-            _isPaused = !_isPaused;
-            if (_isPaused) {
-              widget.props.pauseTimer();
-            } else {
-              widget.props.resumeTimer();
-            }
-          });
+          ref.read(wordGameStateProvider.notifier).togglePause();
+          if (wordGameState.isPaused) {
+            widget.props.resumeTimer();
+          } else {
+            widget.props.pauseTimer();
+          }
         },
-        backgroundColor: _isPaused ? Colors.grey : theme.colorScheme.primary,
+        backgroundColor: theme.colorScheme.primary,
         child: Icon(
-          _isPaused ? Icons.play_arrow : Icons.pause,
+          Icons.pause,
           size: 36,
           color: theme.colorScheme.onPrimary,
         ),
@@ -415,5 +437,4 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
-
 }
