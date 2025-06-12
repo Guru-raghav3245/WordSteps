@@ -76,6 +76,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
 
+    // Compose the email body with the options
     const String email = 'master.guru.raghav@gmail.com';
     const String subject = 'WordSteps Listen Mode Report';
     final String body =
@@ -123,12 +124,37 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                 child: Column(
                   children: [
                     const Spacer(),
-                    _buildTimerCard(theme), // New timer card
+                    _buildTimerCard(theme),
                     const SizedBox(height: 16),
                     _buildMainContent(theme, wordGameState),
                     const Spacer(),
                     _buildPauseButton(theme, wordGameState),
                   ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 16,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: IconButton(
+                  onPressed: _sendReportEmail,
+                  icon: Icon(Icons.report, color: theme.colorScheme.onPrimary),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
+                    minimumSize: const Size(0, 40),
+                  ),
                 ),
               ),
             ),
@@ -225,11 +251,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
       title: const Text('Listen Mode'),
       centerTitle: true,
       actions: [
-        IconButton(
-          icon: Icon(Icons.report, color: theme.colorScheme.onPrimary),
-          onPressed: _sendReportEmail,
-          tooltip: 'Report Options',
-        ),
         IconButton(
           icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
           onPressed: widget.props.showQuitDialog,
