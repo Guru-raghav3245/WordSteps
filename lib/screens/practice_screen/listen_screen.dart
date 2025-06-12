@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/questions/word_generator.dart';
 import '/questions/tts_translator.dart';
 import 'confetti_helper.dart';
-import 'package:word_app/models/word_game_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class GameScreenProps {
@@ -25,10 +24,7 @@ class GameScreenProps {
 class ListenModeScreen extends ConsumerStatefulWidget {
   final GameScreenProps props;
 
-  const ListenModeScreen({
-    super.key,
-    required this.props,
-  });
+  const ListenModeScreen({super.key, required this.props});
 
   @override
   ConsumerState<ListenModeScreen> createState() => _ListenModeScreenState();
@@ -76,7 +72,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
 
-    // Compose the email body with the options
     const String email = 'master.guru.raghav@gmail.com';
     const String subject = 'WordSteps Listen Mode Report';
     final String body =
@@ -105,304 +100,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
         );
       }
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final wordGameState = ref.watch(wordGameStateProvider);
-
-    return Scaffold(
-      appBar: _buildAppBar(theme, wordGameState),
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Center(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Column(
-                  children: [
-                    const Spacer(),
-                    _buildTimerCard(theme),
-                    const SizedBox(height: 16),
-                    _buildMainContent(theme, wordGameState),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildPauseButton(theme, wordGameState),
-                        const SizedBox(width: 16),
-                        FloatingActionButton(
-                          onPressed: _sendReportEmail,
-                          backgroundColor: theme.colorScheme.primary,
-                          tooltip: 'Report Options',
-                          child: Icon(
-                            Icons.report,
-                            size: 36,
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 80), // Space for volume slider
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: SafeArea(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.volume_mute,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 4,
-                          thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 8),
-                          overlayShape:
-                              const RoundSliderOverlayShape(overlayRadius: 16),
-                          activeTrackColor: theme.colorScheme.primary,
-                          inactiveTrackColor:
-                              theme.colorScheme.primary.withOpacity(0.3),
-                          thumbColor: theme.colorScheme.primary,
-                          overlayColor:
-                              theme.colorScheme.primary.withOpacity(0.2),
-                        ),
-                        child: Slider(
-                          value: _volume,
-                          min: 0.0,
-                          max: 1.0,
-                          divisions: 20,
-                          onChanged: (value) {
-                            setState(() {
-                              _volume = value;
-                            });
-                            ref.read(ttsServiceProvider).setVolume(value);
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.volume_up,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: IgnorePointer(
-              child: confettiManager.buildCorrectConfetti(),
-            ),
-          ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: IgnorePointer(
-              child: confettiManager.buildWrongConfetti(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(
-      ThemeData theme, WordGameState wordGameState) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      title: const Text('Listen Mode'),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
-          onPressed: widget.props.showQuitDialog,
-          tooltip: 'Quit Game',
-        ),
-        IconButton(
-          icon: Icon(Icons.check_circle_outline,
-              color: theme.colorScheme.onPrimary),
-          onPressed: widget.props.endQuiz,
-          tooltip: 'End Quiz',
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  Widget _buildTimerCard(ThemeData theme) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Text(
-          _formatTime(widget.props.elapsedTime),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
-            fontSize: 24,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainContent(ThemeData theme, WordGameState wordGameState) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Semantics(
-              label: 'Speak word',
-              button: true,
-              child: GestureDetector(
-                onTapDown: (_) => _scaleController.forward(),
-                onTapUp: (_) => _scaleController.reverse(),
-                onTapCancel: () => _scaleController.reverse(),
-                onTap: _canTap ? () => _handleSpeakTap(theme) : null,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Card(
-                    elevation: 6,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                          color: theme.colorScheme.primary.withOpacity(0.2)),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary.withOpacity(0.2),
-                            theme.colorScheme.primary.withOpacity(0.1),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      padding: const EdgeInsets.all(20),
-                      child: _isSpeaking
-                          ? SizedBox(
-                              width: 60,
-                              height: 60,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 4,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    theme.colorScheme.primary),
-                              ),
-                            )
-                          : Icon(
-                              Icons.volume_up,
-                              size: 60,
-                              color: theme.colorScheme.primary,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              alignment: WrapAlignment.center,
-              children: wordGameState.options.map((word) {
-                return SizedBox(
-                  width:
-                      MediaQuery.of(context).size.width * 0.8, // Wider button
-                  child: ElevatedButton(
-                    onPressed: () => _handleWordSelection(word),
-                    style: theme.elevatedButtonTheme.style?.copyWith(
-                      backgroundColor:
-                          MaterialStateProperty.all(theme.colorScheme.primary),
-                      foregroundColor: MaterialStateProperty.all(
-                          theme.colorScheme.onPrimary),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      padding: MaterialStateProperty.all(
-                        const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 20),
-                      ),
-                      minimumSize: MaterialStateProperty.all(
-                        const Size(0, 60),
-                      ),
-                    ),
-                    child: Text(
-                      word,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                      softWrap: true,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
-    return FloatingActionButton(
-      onPressed: () {
-        ref.read(wordGameStateProvider.notifier).togglePause();
-        if (wordGameState.isPaused) {
-          widget.props.resumeTimer();
-        } else {
-          widget.props.pauseTimer();
-        }
-      },
-      backgroundColor: theme.colorScheme.primary,
-      tooltip: 'Pause Game',
-      child: Icon(
-        Icons.pause,
-        size: 36,
-        color: theme.colorScheme.onPrimary,
-      ),
-    );
   }
 
   void _handleSpeakTap(ThemeData theme) async {
@@ -451,5 +148,260 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     int minutes = seconds ~/ 60;
     int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final wordGameState = ref.watch(wordGameStateProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Listen Mode'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
+            onPressed: widget.props.showQuitDialog,
+            tooltip: 'Quit Game',
+          ),
+          IconButton(
+            icon: Icon(Icons.check_circle_outline, color: theme.colorScheme.onPrimary),
+            onPressed: widget.props.endQuiz,
+            tooltip: 'End Quiz',
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FloatingActionButton(
+                            onPressed: () {
+                              ref.read(wordGameStateProvider.notifier).togglePause();
+                              if (wordGameState.isPaused) {
+                                widget.props.resumeTimer();
+                              } else {
+                                widget.props.pauseTimer();
+                              }
+                            },
+                            backgroundColor: theme.colorScheme.primary,
+                            tooltip: 'Pause Game',
+                            child: Icon(
+                              Icons.pause,
+                              size: 36,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              child: Text(
+                                _formatTime(widget.props.elapsedTime),
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          FloatingActionButton(
+                            onPressed: _sendReportEmail,
+                            backgroundColor: theme.colorScheme.primary,
+                            tooltip: 'Report Options',
+                            child: Icon(
+                              Icons.report,
+                              size: 36,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Semantics(
+                              label: 'Speak word',
+                              button: true,
+                              child: GestureDetector(
+                                onTapDown: (_) => _scaleController.forward(),
+                                onTapUp: (_) => _scaleController.reverse(),
+                                onTapCancel: () => _scaleController.reverse(),
+                                onTap: _canTap ? () => _handleSpeakTap(theme) : null,
+                                child: ScaleTransition(
+                                  scale: _scaleAnimation,
+                                  child: Card(
+                                    elevation: 6,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            theme.colorScheme.primary.withOpacity(0.2),
+                                            theme.colorScheme.primary.withOpacity(0.1),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      padding: const EdgeInsets.all(20),
+                                      child: _isSpeaking
+                                          ? SizedBox(
+                                              width: 60,
+                                              height: 60,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 4,
+                                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                                              ),
+                                            )
+                                          : Icon(
+                                              Icons.volume_up,
+                                              size: 60,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            Wrap(
+                              spacing: 16,
+                              runSpacing: 16,
+                              alignment: WrapAlignment.center,
+                              children: wordGameState.options.map((word) {
+                                return SizedBox(
+                                  width: MediaQuery.of(context).size.width * 0.8,
+                                  child: ElevatedButton(
+                                    onPressed: () => _handleWordSelection(word),
+                                    style: theme.elevatedButtonTheme.style?.copyWith(
+                                      backgroundColor: MaterialStateProperty.all(theme.colorScheme.primary),
+                                      foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+                                      shape: MaterialStateProperty.all(
+                                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      padding: MaterialStateProperty.all(
+                                        const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                      ),
+                                      minimumSize: MaterialStateProperty.all(const Size(0, 60)),
+                                    ),
+                                    child: Text(
+                                      word,
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontSize: 16,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      softWrap: true,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.volume_mute, color: theme.colorScheme.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 4,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                          activeTrackColor: theme.colorScheme.primary,
+                          inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.3),
+                          thumbColor: theme.colorScheme.primary,
+                          overlayColor: theme.colorScheme.primary.withOpacity(0.2),
+                        ),
+                        child: Slider(
+                          value: _volume,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 20,
+                          onChanged: (value) {
+                            setState(() {
+                              _volume = value;
+                            });
+                            ref.read(ttsServiceProvider).setVolume(value);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.volume_up, color: theme.colorScheme.primary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: IgnorePointer(child: confettiManager.buildCorrectConfetti()),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: IgnorePointer(child: confettiManager.buildWrongConfetti()),
+          ),
+        ],
+      ),
+    );
   }
 }
