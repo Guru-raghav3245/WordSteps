@@ -158,18 +158,46 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Listen Mode'),
+        title: const Text(
+          'Listen Mode',
+        ),
         centerTitle: true,
+        backgroundColor: theme.colorScheme.primary,
         actions: [
-          IconButton(
-            icon: Icon(Icons.exit_to_app, color: theme.colorScheme.onPrimary),
-            onPressed: widget.props.showQuitDialog,
-            tooltip: 'Quit Game',
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: ElevatedButton.icon(
+              onPressed: widget.props.showQuitDialog,
+              icon: const Icon(Icons.close, size: 20),
+              label: const Text('Quit'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.check_circle_outline, color: theme.colorScheme.onPrimary),
-            onPressed: widget.props.endQuiz,
-            tooltip: 'End Quiz',
+          const SizedBox(width: 8),
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: ElevatedButton.icon(
+              onPressed: widget.props.endQuiz,
+              icon: const Icon(Icons.check, size: 20),
+              label: const Text('End'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -179,7 +207,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           SafeArea(
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   children: [
                     Padding(
@@ -189,7 +218,9 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         children: [
                           FloatingActionButton(
                             onPressed: () {
-                              ref.read(wordGameStateProvider.notifier).togglePause();
+                              ref
+                                  .read(wordGameStateProvider.notifier)
+                                  .togglePause();
                               if (wordGameState.isPaused) {
                                 widget.props.resumeTimer();
                               } else {
@@ -207,9 +238,11 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                           const SizedBox(width: 16),
                           Card(
                             elevation: 4,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
                               child: Text(
                                 _formatTime(widget.props.elapsedTime),
                                 style: theme.textTheme.bodyLarge?.copyWith(
@@ -237,7 +270,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                     const SizedBox(height: 16),
                     Card(
                       elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
@@ -250,21 +284,27 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                                 onTapDown: (_) => _scaleController.forward(),
                                 onTapUp: (_) => _scaleController.reverse(),
                                 onTapCancel: () => _scaleController.reverse(),
-                                onTap: _canTap ? () => _handleSpeakTap(theme) : null,
+                                onTap: _canTap
+                                    ? () => _handleSpeakTap(theme)
+                                    : null,
                                 child: ScaleTransition(
                                   scale: _scaleAnimation,
                                   child: Card(
                                     elevation: 6,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
-                                      side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                                      side: BorderSide(
+                                          color: theme.colorScheme.primary
+                                              .withOpacity(0.2)),
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
-                                            theme.colorScheme.primary.withOpacity(0.2),
-                                            theme.colorScheme.primary.withOpacity(0.1),
+                                            theme.colorScheme.primary
+                                                .withOpacity(0.2),
+                                            theme.colorScheme.primary
+                                                .withOpacity(0.1),
                                           ],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
@@ -278,7 +318,11 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                                               height: 60,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 4,
-                                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                            Color>(
+                                                        theme.colorScheme
+                                                            .primary),
                                               ),
                                             )
                                           : Icon(
@@ -298,23 +342,34 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                               alignment: WrapAlignment.center,
                               children: wordGameState.options.map((word) {
                                 return SizedBox(
-                                  width: MediaQuery.of(context).size.width * 0.8,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.8,
                                   child: ElevatedButton(
                                     onPressed: () => _handleWordSelection(word),
-                                    style: theme.elevatedButtonTheme.style?.copyWith(
-                                      backgroundColor: MaterialStateProperty.all(theme.colorScheme.primary),
-                                      foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+                                    style: theme.elevatedButtonTheme.style
+                                        ?.copyWith(
+                                      backgroundColor:
+                                          MaterialStateProperty.all(
+                                              theme.colorScheme.primary),
+                                      foregroundColor:
+                                          MaterialStateProperty.all(
+                                              theme.colorScheme.onPrimary),
                                       shape: MaterialStateProperty.all(
-                                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
                                       ),
                                       padding: MaterialStateProperty.all(
-                                        const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                        const EdgeInsets.symmetric(
+                                            vertical: 16, horizontal: 20),
                                       ),
-                                      minimumSize: MaterialStateProperty.all(const Size(0, 60)),
+                                      minimumSize: MaterialStateProperty.all(
+                                          const Size(0, 60)),
                                     ),
                                     child: Text(
                                       word,
-                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                      style:
+                                          theme.textTheme.bodyLarge?.copyWith(
                                         color: theme.colorScheme.onPrimary,
                                         fontSize: 16,
                                       ),
@@ -344,7 +399,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
             child: SafeArea(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(16),
@@ -358,18 +414,23 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.volume_mute, color: theme.colorScheme.primary, size: 20),
+                    Icon(Icons.volume_mute,
+                        color: theme.colorScheme.primary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           trackHeight: 4,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                          thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 8),
+                          overlayShape:
+                              const RoundSliderOverlayShape(overlayRadius: 16),
                           activeTrackColor: theme.colorScheme.primary,
-                          inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.3),
+                          inactiveTrackColor:
+                              theme.colorScheme.primary.withOpacity(0.3),
                           thumbColor: theme.colorScheme.primary,
-                          overlayColor: theme.colorScheme.primary.withOpacity(0.2),
+                          overlayColor:
+                              theme.colorScheme.primary.withOpacity(0.2),
                         ),
                         child: Slider(
                           value: _volume,
@@ -386,7 +447,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.volume_up, color: theme.colorScheme.primary, size: 20),
+                    Icon(Icons.volume_up,
+                        color: theme.colorScheme.primary, size: 20),
                   ],
                 ),
               ),
