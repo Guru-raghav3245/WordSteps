@@ -128,33 +128,25 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                     const SizedBox(height: 16),
                     _buildMainContent(theme, wordGameState),
                     const Spacer(),
-                    _buildPauseButton(theme, wordGameState),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildPauseButton(theme, wordGameState),
+                        const SizedBox(width: 16),
+                        FloatingActionButton(
+                          onPressed: _sendReportEmail,
+                          backgroundColor: theme.colorScheme.primary,
+                          tooltip: 'Report Options',
+                          child: Icon(
+                            Icons.report,
+                            size: 36,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 80), // Space for volume slider
                   ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            right: 16,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: IconButton(
-                  onPressed: _sendReportEmail,
-                  icon: Icon(Icons.report, color: theme.colorScheme.onPrimary),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 12,
-                    ),
-                    minimumSize: const Size(0, 40),
-                  ),
                 ),
               ),
             ),
@@ -394,23 +386,21 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 80),
-      child: FloatingActionButton(
-        onPressed: () {
-          ref.read(wordGameStateProvider.notifier).togglePause();
-          if (wordGameState.isPaused) {
-            widget.props.resumeTimer();
-          } else {
-            widget.props.pauseTimer();
-          }
-        },
-        backgroundColor: theme.colorScheme.primary,
-        child: Icon(
-          Icons.pause,
-          size: 36,
-          color: theme.colorScheme.onPrimary,
-        ),
+    return FloatingActionButton(
+      onPressed: () {
+        ref.read(wordGameStateProvider.notifier).togglePause();
+        if (wordGameState.isPaused) {
+          widget.props.resumeTimer();
+        } else {
+          widget.props.pauseTimer();
+        }
+      },
+      backgroundColor: theme.colorScheme.primary,
+      tooltip: 'Pause Game',
+      child: Icon(
+        Icons.pause,
+        size: 36,
+        color: theme.colorScheme.onPrimary,
       ),
     );
   }
