@@ -76,7 +76,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
 
-    // Compose the email body with the options
     const String email = 'master.guru.raghav@gmail.com';
     const String subject = 'WordSteps Listen Mode Report';
     final String body =
@@ -124,6 +123,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                 child: Column(
                   children: [
                     const Spacer(),
+                    _buildTimerCard(theme), // New timer card
+                    const SizedBox(height: 16),
                     _buildMainContent(theme, wordGameState),
                     const Spacer(),
                     _buildPauseButton(theme, wordGameState),
@@ -224,21 +225,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
       title: const Text('Listen Mode'),
       centerTitle: true,
       actions: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            _formatTime(widget.props.elapsedTime),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
         IconButton(
           icon: Icon(Icons.report, color: theme.colorScheme.onPrimary),
           onPressed: _sendReportEmail,
@@ -257,6 +243,24 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
         ),
         const SizedBox(width: 8),
       ],
+    );
+  }
+
+  Widget _buildTimerCard(ThemeData theme) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Text(
+          _formatTime(widget.props.elapsedTime),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+          ),
+        ),
+      ),
     );
   }
 
