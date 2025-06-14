@@ -158,10 +158,9 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
-          'Listen Mode',
-        ),
-        centerTitle: true,
+        title: const Text('Listen Mode'),
+        centerTitle: false, // Aligns title to the left
+        titleSpacing: 16.0, // Adjust padding from the left edge
         backgroundColor: theme.colorScheme.primary,
         actions: [
           ScaleTransition(
