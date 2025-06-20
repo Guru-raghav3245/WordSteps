@@ -39,7 +39,27 @@ class EnglishSentences {
     "You jump on bed.",
     "We draw a fish.",
     "They hug a doll.",
-    "He climbs a tree."
+    "He climbs a tree.",
+    "I paint a house.",
+    "You feed the fish.",
+    "We walk to park.",
+    "They kick a ball.",
+    "She cleans the desk.",
+    "I touch the sky.",
+    "You pull a rope.",
+    "We lift a box.",
+    "They wave a flag.",
+    "He drops a coin.",
+    "She ties a knot.",
+    "It flies in air.",
+    "I fold a paper.",
+    "You push a cart.",
+    "We plant a seed.",
+    "They build a fort.",
+    "He swings a bat.",
+    "She sweeps the floor.",
+    "It hops on ground.",
+    "I carry a bag."
   ];
 
   static const List<String> kumon6aSentences = [
@@ -82,7 +102,27 @@ class EnglishSentences {
     "You jump on the soft bed.",
     "We draw a big fish.",
     "They hug a cute doll.",
-    "He climbs a tall tree."
+    "He climbs a tall tree.",
+    "I paint a green house.",
+    "You feed the tiny fish.",
+    "We walk to a small park.",
+    "They kick a blue ball.",
+    "She cleans the dusty desk.",
+    "I touch the wide sky.",
+    "You pull a strong rope.",
+    "We lift a heavy box.",
+    "They wave a bright flag.",
+    "He drops a shiny coin.",
+    "She ties a tight knot.",
+    "It flies in clear air.",
+    "I fold a thin paper.",
+    "You push a big cart.",
+    "We plant a green seed.",
+    "They build a tall fort.",
+    "He swings a heavy bat.",
+    "She sweeps the clean floor.",
+    "It hops on dry ground.",
+    "I carry a full bag."
   ];
 
   static const List<String> kumon5aSentences = [
@@ -125,7 +165,22 @@ class EnglishSentences {
     "A sad pup hid in a den.",
     "The bat hit a big tin.",
     "A fat hen had ten eggs.",
-    "The man can run in the sun."
+    "The man can run in the sun.",
+    "The frog sat on a lily pad.",
+    "A bird flew over the tall fence.",
+    "The dog slept on the soft rug.",
+    "A boy ran with a big kite.",
+    "The cow stood in the green field.",
+    "A fish swam in the deep pond.",
+    "The girl sat by the warm fire.",
+    "A bee buzzed around the sweet flower.",
+    "The boy climbed up the tall ladder.",
+    "A dog barked at the full moon.",
+    "The cat slept in the cozy basket.",
+    "A bird nested in the high tree.",
+    "The man painted on the white wall.",
+    "A goat grazed in the green meadow.",
+    "The kid played with a round ball."
   ];
 
   static const List<String> kumon4aSentences = [
@@ -164,7 +219,22 @@ class EnglishSentences {
     "They went to the park and played together.",
     "The monkey swung from tree to tree.",
     "The loud thunder shook the house.",
-    "The little bird built a nest on the tree."
+    "The little bird built a nest on the tree.",
+    "The kite soared above the green field.",
+    "The boy fished in the calm river.",
+    "The dog dug under the tall fence.",
+    "The girl painted a bright red flower.",
+    "The wind whistled through the narrow valley.",
+    "The horse galloped across the wide plain.",
+    "The children laughed during the fun game.",
+    "The owl perched on the high branch.",
+    "The boat sailed across the deep lake.",
+    "The rabbit hopped through the soft grass.",
+    "The sun shone through the thin clouds.",
+    "The kids ran down the steep hill.",
+    "The bell rang in the old tower.",
+    "The fox sneaked into the dark barn.",
+    "The girl danced under the bright stars."
   ];
 
   static const List<String> kumon3aSentences = [
@@ -204,7 +274,22 @@ class EnglishSentences {
     "The owl hooted in the quiet night.",
     "The clouds covered the sun for a while.",
     "The brown dog chased its tail happily.",
-    "We ran up the hill to see the view."
+    "We ran up the hill to see the view.",
+    "The horse trotted along the dusty trail.",
+    "The girl picked flowers in the bright meadow.",
+    "The moon glowed softly behind the thin clouds.",
+    "The boy sailed a boat on the calm lake.",
+    "The wind carried leaves across the wide field.",
+    "The kids built a fort in the shady forest.",
+    "The rabbit nibbled carrots in the small garden.",
+    "The teacher read a story to the happy class.",
+    "The dog followed the boy down the long path.",
+    "The stars sparkled above the quiet village.",
+    "The girl drew a rainbow with bright colors.",
+    "The frog leaped over the small green lily pads.",
+    "The sun warmed the sand on the wide beach.",
+    "The boy climbed high up the steep mountain.",
+    "The birds sang sweetly in the early morning."
   ];
 
   static const List<String> kumon2aSentences = [
@@ -246,6 +331,21 @@ class EnglishSentences {
     "The dog slept peacefully in its cozy bed.",
     "We ate lunch outside in the cool breeze.",
     "The stars twinkled brightly in the dark sky.",
-    "We built a snowman in the front yard."
+    "We built a snowman in the front yard.",
+    "The boy flew a kite high above the green hill.",
+    "The girl danced happily under the bright moonlight.",
+    "We picked ripe apples from the tall orchard trees.",
+    "The dog chased a squirrel around the big park.",
+    "The children drew pictures during the art class today.",
+    "The wind blew gently through the open green valley.",
+    "I read a long book under the shady oak tree.",
+    "The teacher showed us a map in the geography lesson.",
+    "The cat jumped onto the table to eat some food.",
+    "We watched a movie at the theater last night.",
+    "The boy kicked a ball across the wide field.",
+    "The birds built nests high up in the tall trees.",
+    "She wrote a letter to her friend after dinner.",
+    "The sun set slowly behind the calm blue ocean.",
+    "We played a fun game in the backyard yesterday."
   ];
 }
