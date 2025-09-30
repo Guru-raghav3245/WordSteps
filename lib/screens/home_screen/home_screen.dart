@@ -42,22 +42,12 @@ class HomeScreen extends ConsumerWidget {
                   DropdownMenuItem(value: 'read', child: Text('Listen Mode')),
                   DropdownMenuItem(
                     value: 'listen',
-                    child: Text('Read Mode (Work in Progress)',),
+                    child: Text('Read Mode'), // Removed "Work in Progress"
                   ),
                 ],
                 onChanged: (value) {
-                  if (value != null && value != 'listen') {
+                  if (value != null) {
                     ref.read(gameModeProvider.notifier).state = value;
-                  } else if (value == 'listen') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Read Mode is under development and not available yet.',
-                          style: TextStyle(color: theme.colorScheme.onSurface),
-                        ),
-                        backgroundColor: theme.colorScheme.surface,
-                      ),
-                    );
                   }
                 },
               ),
@@ -122,7 +112,10 @@ class HomeScreen extends ConsumerWidget {
                       value: ContentType.wordLength14,
                       child: Text('14 Letter Words')),
                 ],
-                onChanged: (value) {ref.read(contentTypeProvider.notifier).state = value!;}),
+                onChanged: (value) {
+                  ref.read(contentTypeProvider.notifier).state = value!;
+                },
+              ),
               const SizedBox(height: 40),
               _buildActionButton(
                 context,
@@ -181,7 +174,6 @@ class HomeScreen extends ConsumerWidget {
                   isExpanded: true,
                   underline: const SizedBox(),
                   items: items.map((item) {
-                    // Extract the text content from the Text widget
                     final textContent = (item.child as Text).data ?? '';
                     return DropdownMenuItem<T>(
                       value: item.value,
