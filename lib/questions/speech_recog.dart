@@ -4,6 +4,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 class SpeechRecognitionService {
   final stt.SpeechToText _speechToText = stt.SpeechToText();
+  Function(String)? _onResultCallback;
+  bool _isContinuous = false;
 
   Future<void> initializeSpeech() async {
     // Request microphone permission
@@ -19,6 +21,30 @@ class SpeechRecognitionService {
     if (!available) {
       throw Exception('Speech recognition not available');
     }
+  }
+
+  Future<void> startContinuousListening({
+    required void Function(String) onResult,
+  }) async {
+    _onResultCallback = onResult;
+    _isContinuous = true;
+
+    await _speechToText.listen(
+      onResult: (result) {
+        if (result.recognizedWords.isNotEmpty) {
+          final recognizedText = result.recognizedWords.trim();
+          print('Continuous recognition: $recognizedText');
+          
+          // Call the callback with the recognized text
+          _onResultCallback?.call(recognizedText);
+        }
+      },
+      listenFor: Duration(minutes: 5), // Longer duration for continuous listening
+      pauseFor: Duration(seconds: 3),
+      cancelOnError: true,
+      partialResults: true,
+      listenMode: stt.ListenMode.dictation,
+    );
   }
 
   Future<String?> startListening({
@@ -46,9 +72,11 @@ class SpeechRecognitionService {
 
   void stopListening() {
     _speechToText.stop();
+    _isContinuous = false;
   }
 
   bool get isListening => _speechToText.isListening;
+  bool get isContinuous => _isContinuous;
 }
 
 final speechRecognitionServiceProvider = Provider<SpeechRecognitionService>((ref) {
