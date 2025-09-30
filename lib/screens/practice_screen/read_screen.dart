@@ -95,11 +95,10 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             if (!mounted || _isProcessing) return;
 
             print('Continuous Recognized: $recognizedWord');
-            
+
             setState(() {
-              _recognizedWord = recognizedWord.isEmpty 
-                  ? 'Listening...' 
-                  : recognizedWord;
+              _recognizedWord =
+                  recognizedWord.isEmpty ? 'Listening...' : recognizedWord;
             });
 
             // Only process if we have substantial text
@@ -122,9 +121,9 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
   void _processSpeechResult(String recognizedWord) {
     if (_isProcessing) return;
-    
+
     _isProcessing = true;
-    
+
     final currentState = ref.read(wordGameStateProvider);
     final correctWord = currentState.correctWord;
 
@@ -147,18 +146,18 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     print('Similarity score: $similarity');
 
     // Check if the recognized text contains the correct word or has high similarity
-    bool isCorrect = normalizedRecognized.contains(normalizedCorrect) || 
-                    similarity > 0.7;
+    bool isCorrect =
+        normalizedRecognized.contains(normalizedCorrect) || similarity > 0.7;
 
     if (isCorrect) {
       print('Correct answer detected! Moving to next question...');
-      
+
       // Handle the correct answer
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-      
+
       // Show confetti
       confettiManager.correctConfettiController.play();
-      
+
       // Reset for next question after a short delay
       Future.delayed(Duration(milliseconds: 1500), () {
         if (mounted) {
@@ -166,7 +165,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             _recognizedWord = 'Correct! Next word...';
             _isProcessing = false;
           });
-          
+
           // The wordGameStateProvider will automatically update with the next word
           // Continue listening for the next word
           Future.delayed(Duration(milliseconds: 1000), () {
@@ -180,13 +179,24 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         }
       });
     } else {
-      // Not correct yet, continue listening
-      _isProcessing = false;
-      
+      // Incorrect attempt - call handleAnswer with the incorrect response
+      // This should increment the incorrect attempts counter
+      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
+
+      // Show wrong confetti for incorrect attempts
+      if (ref.read(wordGameStateProvider).incorrectAttempts >= 2) {
+        confettiManager.wrongConfettiController.play();
+      }
+
       // Update the display but keep listening
       setState(() {
         _recognizedWord = recognizedWord;
       });
+
+      _isProcessing = false;
+
+      print(
+          'Incorrect attempt. Current attempts: ${ref.read(wordGameStateProvider).incorrectAttempts}');
     }
   }
 
