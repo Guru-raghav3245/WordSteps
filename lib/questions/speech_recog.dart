@@ -26,25 +26,33 @@ class SpeechRecognitionService {
   Future<void> startContinuousListening({
     required void Function(String) onResult,
   }) async {
+    // Stop any existing listening first
+    if (_speechToText.isListening) {
+      _speechToText.stop();
+      await Future.delayed(Duration(milliseconds: 300));
+    }
+
     _onResultCallback = onResult;
     _isContinuous = true;
 
-    await _speechToText.listen(
+    bool success = await _speechToText.listen(
       onResult: (result) {
         if (result.recognizedWords.isNotEmpty) {
           final recognizedText = result.recognizedWords.trim();
           print('Continuous recognition: $recognizedText');
-          
-          // Call the callback with the recognized text
           _onResultCallback?.call(recognizedText);
         }
       },
-      listenFor: Duration(minutes: 5), // Longer duration for continuous listening
-      pauseFor: Duration(seconds: 3),
-      cancelOnError: true,
+      listenFor: Duration(minutes: 30), // Very long duration
+      pauseFor: Duration(seconds: 10), // Longer pause
+      cancelOnError: false,
       partialResults: true,
       listenMode: stt.ListenMode.dictation,
     );
+
+    if (!success) {
+      throw Exception('Failed to start listening');
+    }
   }
 
   Future<String?> startListening({

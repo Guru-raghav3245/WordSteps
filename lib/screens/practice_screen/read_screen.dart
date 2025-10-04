@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import '../../questions/speech_recog.dart';
 import '/questions/word_generator.dart';
 import 'package:word_app/models/word_game_state.dart';
@@ -30,7 +31,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   bool isListening = false;
   String _recognizedWord = '';
   late final ConfettiManager confettiManager;
-  bool _isProcessing = false; // To prevent multiple processing
+  bool _isProcessing = false;
+  String _previousWord = '';
+  late Timer _listeningCheckTimer;
+  bool _shouldRestartListening = false;
+  String _lastProcessedWord = ''; // Track last processed word to avoid duplicates
+  Timer? _duplicatePreventionTimer; // Timer to prevent duplicate processing
 
   late SpeechRecognitionService _speechRecognitionService;
 
@@ -40,12 +46,20 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _speechRecognitionService = ref.read(speechRecognitionServiceProvider);
     confettiManager = ConfettiManager();
     _initializeSpeech();
+    
+    _listeningCheckTimer = Timer.periodic(Duration(seconds: 3), (timer) {
+      if (mounted && isListening && _shouldRestartListening) {
+        _checkAndRestartListening();
+      }
+    });
   }
 
   @override
   void dispose() {
     _speechRecognitionService.stopListening();
     confettiManager.dispose();
+    _listeningCheckTimer.cancel();
+    _duplicatePreventionTimer?.cancel();
     super.dispose();
   }
 
@@ -88,6 +102,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           isListening = true;
           _recognizedWord = 'Listening...';
           _isProcessing = false;
+          _shouldRestartListening = false;
+          _lastProcessedWord = ''; // Reset when starting new session
         });
 
         await _speechRecognitionService.startContinuousListening(
@@ -101,8 +117,9 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
                   recognizedWord.isEmpty ? 'Listening...' : recognizedWord;
             });
 
-            // Only process if we have substantial text
-            if (recognizedWord.isNotEmpty && recognizedWord != 'Listening...') {
+            if (recognizedWord.isNotEmpty && 
+                recognizedWord != 'Listening...' && 
+                !_isProcessing) {
               _processSpeechResult(recognizedWord);
             }
           },
@@ -112,18 +129,31 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       if (!mounted) return;
 
       print('Speech recognition exception: $e');
-      setState(() {
-        isListening = false;
-        _recognizedWord = 'Error occurred';
-      });
+      
+      if (isListening) {
+        _shouldRestartListening = true;
+      }
     }
   }
 
   void _processSpeechResult(String recognizedWord) {
-    if (_isProcessing) return;
-
+    // Prevent duplicate processing of the same word within 2 seconds
+    if (_isProcessing || 
+        (recognizedWord == _lastProcessedWord && 
+         _duplicatePreventionTimer != null)) {
+      print('Skipping duplicate processing: $recognizedWord');
+      return;
+    }
+    
     _isProcessing = true;
-
+    _lastProcessedWord = recognizedWord;
+    
+    // Set timer to prevent duplicate processing for 2 seconds
+    _duplicatePreventionTimer?.cancel();
+    _duplicatePreventionTimer = Timer(Duration(seconds: 2), () {
+      _lastProcessedWord = '';
+    });
+    
     final currentState = ref.read(wordGameStateProvider);
     final correctWord = currentState.correctWord;
 
@@ -145,58 +175,106 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     double similarity = normalizedRecognized.similarityTo(normalizedCorrect);
     print('Similarity score: $similarity');
 
-    // Check if the recognized text contains the correct word or has high similarity
-    bool isCorrect =
-        normalizedRecognized.contains(normalizedCorrect) || similarity > 0.7;
+    bool isCorrect = normalizedRecognized.contains(normalizedCorrect) || 
+                    similarity > 0.7;
 
     if (isCorrect) {
       print('Correct answer detected! Moving to next question...');
-
-      // Handle the correct answer
+      
+      final previousWord = correctWord;
+      
+      // Handle the correct answer - this should move to next word
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-
+      
       // Show confetti
       confettiManager.correctConfettiController.play();
-
-      // Reset for next question after a short delay
-      Future.delayed(Duration(milliseconds: 1500), () {
+      
+      // Get the new state
+      final newState = ref.read(wordGameStateProvider);
+      
+      // Update UI
+      setState(() {
+        _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
+      });
+      
+      // Only restart listening if the word actually changed
+      if (newState.correctWord != previousWord) {
+        print('Word changed from $previousWord to ${newState.correctWord}');
+        _shouldRestartListening = true;
+      } else {
+        print('Word did not change: $previousWord');
+      }
+      
+      // Reset processing after delay - longer delay to prevent rapid re-processing
+      Future.delayed(Duration(milliseconds: 2000), () {
         if (mounted) {
           setState(() {
-            _recognizedWord = 'Correct! Next word...';
+            _recognizedWord = 'Listening...';
             _isProcessing = false;
-          });
-
-          // The wordGameStateProvider will automatically update with the next word
-          // Continue listening for the next word
-          Future.delayed(Duration(milliseconds: 1000), () {
-            if (mounted && _speechRecognitionService.isContinuous) {
-              setState(() {
-                _recognizedWord = 'Listening...';
-              });
-              _isProcessing = false;
-            }
           });
         }
       });
     } else {
-      // Incorrect attempt - call handleAnswer with the incorrect response
-      // This should increment the incorrect attempts counter
+      // Incorrect attempt
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-
-      // Show wrong confetti for incorrect attempts
-      if (ref.read(wordGameStateProvider).incorrectAttempts >= 2) {
+      
+      final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
+      print('Incorrect attempt. Current attempts: $newAttempts');
+      
+      if (newAttempts >= 2) {
         confettiManager.wrongConfettiController.play();
       }
+      
+      if (newAttempts >= 3) {
+        _handleMaxAttemptsReached();
+      } else {
+        setState(() {
+          _recognizedWord = 'Try again: $recognizedWord';
+        });
+        
+        Future.delayed(Duration(milliseconds: 1500), () {
+          if (mounted) {
+            _isProcessing = false;
+          }
+        });
+      }
+    }
+  }
 
-      // Update the display but keep listening
-      setState(() {
-        _recognizedWord = recognizedWord;
+  void _handleMaxAttemptsReached() {
+    print('Maximum attempts reached, moving to next word...');
+    
+    setState(() {
+      _recognizedWord = 'Moving to next word...';
+    });
+    
+    ref.read(wordGameStateProvider.notifier).handleAnswer('');
+    
+    _shouldRestartListening = true;
+    
+    Future.delayed(Duration(milliseconds: 2000), () {
+      if (mounted) {
+        final newState = ref.read(wordGameStateProvider);
+        setState(() {
+          _recognizedWord = 'Listening for: ${newState.correctWord}';
+          _isProcessing = false;
+        });
+      }
+    });
+  }
+
+  void _checkAndRestartListening() {
+    if (isListening && _shouldRestartListening && mounted) {
+      print('Restarting continuous listening...');
+      _shouldRestartListening = false;
+      
+      _speechRecognitionService.stopListening();
+      
+      Future.delayed(Duration(milliseconds: 1500), () {
+        if (mounted && isListening) {
+          _startContinuousSpeechRecognition();
+        }
       });
-
-      _isProcessing = false;
-
-      print(
-          'Incorrect attempt. Current attempts: ${ref.read(wordGameStateProvider).incorrectAttempts}');
     }
   }
 
@@ -206,6 +284,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       isListening = false;
       _recognizedWord = '';
       _isProcessing = false;
+      _shouldRestartListening = false;
     });
   }
 
@@ -219,6 +298,19 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final wordGameState = ref.watch(wordGameStateProvider);
+
+    // Watch for word changes
+    if (wordGameState.correctWord != _previousWord) {
+      _previousWord = wordGameState.correctWord;
+      _isProcessing = false;
+      if (isListening && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          setState(() {
+            _recognizedWord = 'Listening for: ${wordGameState.correctWord}';
+          });
+        });
+      }
+    }
 
     return Scaffold(
       body: Stack(
