@@ -6,6 +6,7 @@ class SpeechRecognitionService {
   final stt.SpeechToText _speechToText = stt.SpeechToText();
   Function(String)? _onResultCallback;
   bool _isContinuous = false;
+  String? _currentLocaleId;
 
   Future<void> initializeSpeech() async {
     // Request microphone permission
@@ -15,43 +16,67 @@ class SpeechRecognitionService {
     }
 
     bool available = await _speechToText.initialize(
-      onStatus: (status) => print('Speech status: $status'),
-      onError: (error) => print('Speech error: $error'),
+      onStatus: (status) {
+        print('Speech status: $status');
+        if ((status == 'done' || status == 'notListening') && _isContinuous) {
+          print('Auto-restarting continuous listening...');
+          // Add a small delay to prevent rapid loops
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (_isContinuous) {
+              // We don't have the localeId here easily without storing it,
+              // but for now let's assume it uses the last used or default.
+              // To do this properly, we should store the current localeId in the service.
+              _startListeningInternal(localeId: _currentLocaleId);
+            }
+          });
+        }
+      },
+      onError: (error) {
+        print('Speech error: $error');
+        // Optionally handle error-based restarts here if needed
+      },
     );
     if (!available) {
       throw Exception('Speech recognition not available');
     }
   }
 
+  Future<List<stt.LocaleName>> getLocales() async {
+    return await _speechToText.locales();
+  }
+
   Future<void> startContinuousListening({
     required void Function(String) onResult,
+    String? localeId,
   }) async {
-    // Stop any existing listening first
-    if (_speechToText.isListening) {
-      _speechToText.stop();
-      await Future.delayed(Duration(milliseconds: 300));
-    }
-
     _onResultCallback = onResult;
     _isContinuous = true;
+    _currentLocaleId = localeId;
+    await _startListeningInternal(localeId: localeId);
+  }
 
-    bool success = await _speechToText.listen(
-      onResult: (result) {
-        if (result.recognizedWords.isNotEmpty) {
-          final recognizedText = result.recognizedWords.trim();
-          print('Continuous recognition: $recognizedText');
-          _onResultCallback?.call(recognizedText);
-        }
-      },
-      listenFor: Duration(minutes: 30), // Very long duration
-      pauseFor: Duration(seconds: 10), // Longer pause
-      cancelOnError: false,
-      partialResults: true,
-      listenMode: stt.ListenMode.dictation,
-    );
+  Future<void> _startListeningInternal({String? localeId}) async {
+    if (!_isContinuous) return;
 
-    if (!success) {
-      throw Exception('Failed to start listening');
+    try {
+      await _speechToText.listen(
+        onResult: (result) {
+          if (result.recognizedWords.isNotEmpty) {
+            final recognizedText = result.recognizedWords.trim();
+            // print('Continuous recognition: $recognizedText');
+            _onResultCallback?.call(recognizedText);
+          }
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 5),
+        partialResults: true,
+        onDevice: true,
+        localeId: localeId,
+        listenMode: stt.ListenMode.dictation,
+        cancelOnError: false,
+      );
+    } catch (e) {
+      print('Error starting listening: $e');
     }
   }
 
@@ -87,6 +112,7 @@ class SpeechRecognitionService {
   bool get isContinuous => _isContinuous;
 }
 
-final speechRecognitionServiceProvider = Provider<SpeechRecognitionService>((ref) {
+final speechRecognitionServiceProvider =
+    Provider<SpeechRecognitionService>((ref) {
   return SpeechRecognitionService();
 });

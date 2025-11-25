@@ -6,6 +6,7 @@ import '/questions/word_generator.dart';
 import 'package:word_app/models/word_game_state.dart';
 import 'confetti_helper.dart';
 import 'package:string_similarity/string_similarity.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class ReadModeScreen extends ConsumerStatefulWidget {
   final int elapsedTime;
@@ -33,10 +34,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   late final ConfettiManager confettiManager;
   bool _isProcessing = false;
   String _previousWord = '';
-  late Timer _listeningCheckTimer;
-  bool _shouldRestartListening = false;
-  String _lastProcessedWord = ''; // Track last processed word to avoid duplicates
+  String _lastProcessedWord =
+      ''; // Track last processed word to avoid duplicates
   Timer? _duplicatePreventionTimer; // Timer to prevent duplicate processing
+
+  List<stt.LocaleName> _locales = [];
+  String? _selectedLocaleId;
 
   late SpeechRecognitionService _speechRecognitionService;
 
@@ -46,19 +49,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _speechRecognitionService = ref.read(speechRecognitionServiceProvider);
     confettiManager = ConfettiManager();
     _initializeSpeech();
-    
-    _listeningCheckTimer = Timer.periodic(Duration(seconds: 3), (timer) {
-      if (mounted && isListening && _shouldRestartListening) {
-        _checkAndRestartListening();
-      }
-    });
   }
 
   @override
   void dispose() {
     _speechRecognitionService.stopListening();
     confettiManager.dispose();
-    _listeningCheckTimer.cancel();
     _duplicatePreventionTimer?.cancel();
     super.dispose();
   }
@@ -66,6 +62,22 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   Future<void> _initializeSpeech() async {
     try {
       await _speechRecognitionService.initializeSpeech();
+      var locales = await _speechRecognitionService.getLocales();
+      if (mounted) {
+        setState(() {
+          _locales = locales;
+          // Try to find a good default, e.g., system default or English US
+          // For now, let's just pick the first one or 'en_US' if available
+          try {
+            _selectedLocaleId =
+                locales.firstWhere((l) => l.localeId == 'en_US').localeId;
+          } catch (e) {
+            if (locales.isNotEmpty) {
+              _selectedLocaleId = locales.first.localeId;
+            }
+          }
+        });
+      }
     } catch (e) {
       print("Speech recognition initialization failed: $e");
       if (mounted) {
@@ -102,11 +114,11 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           isListening = true;
           _recognizedWord = 'Listening...';
           _isProcessing = false;
-          _shouldRestartListening = false;
           _lastProcessedWord = ''; // Reset when starting new session
         });
 
         await _speechRecognitionService.startContinuousListening(
+          localeId: _selectedLocaleId,
           onResult: (recognizedWord) {
             if (!mounted || _isProcessing) return;
 
@@ -117,8 +129,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
                   recognizedWord.isEmpty ? 'Listening...' : recognizedWord;
             });
 
-            if (recognizedWord.isNotEmpty && 
-                recognizedWord != 'Listening...' && 
+            if (recognizedWord.isNotEmpty &&
+                recognizedWord != 'Listening...' &&
                 !_isProcessing) {
               _processSpeechResult(recognizedWord);
             }
@@ -129,31 +141,32 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       if (!mounted) return;
 
       print('Speech recognition exception: $e');
-      
-      if (isListening) {
-        _shouldRestartListening = true;
-      }
+
+      setState(() {
+        isListening = false;
+        _recognizedWord = 'Error: ${e.toString()}';
+      });
     }
   }
 
   void _processSpeechResult(String recognizedWord) {
     // Prevent duplicate processing of the same word within 2 seconds
-    if (_isProcessing || 
-        (recognizedWord == _lastProcessedWord && 
-         _duplicatePreventionTimer != null)) {
+    if (_isProcessing ||
+        (recognizedWord == _lastProcessedWord &&
+            _duplicatePreventionTimer != null)) {
       print('Skipping duplicate processing: $recognizedWord');
       return;
     }
-    
+
     _isProcessing = true;
     _lastProcessedWord = recognizedWord;
-    
+
     // Set timer to prevent duplicate processing for 2 seconds
     _duplicatePreventionTimer?.cancel();
     _duplicatePreventionTimer = Timer(Duration(seconds: 2), () {
       _lastProcessedWord = '';
     });
-    
+
     final currentState = ref.read(wordGameStateProvider);
     final correctWord = currentState.correctWord;
 
@@ -175,36 +188,36 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     double similarity = normalizedRecognized.similarityTo(normalizedCorrect);
     print('Similarity score: $similarity');
 
-    bool isCorrect = normalizedRecognized.contains(normalizedCorrect) || 
-                    similarity > 0.7;
+    bool isCorrect = normalizedRecognized.contains(normalizedCorrect) ||
+        similarity > 0.6; // Lowered threshold slightly for better experience
 
     if (isCorrect) {
       print('Correct answer detected! Moving to next question...');
-      
+
       final previousWord = correctWord;
-      
+
       // Handle the correct answer - this should move to next word
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-      
+
       // Show confetti
       confettiManager.correctConfettiController.play();
-      
+
       // Get the new state
       final newState = ref.read(wordGameStateProvider);
-      
+
       // Update UI
       setState(() {
         _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
       });
-      
+
       // Only restart listening if the word actually changed
       if (newState.correctWord != previousWord) {
         print('Word changed from $previousWord to ${newState.correctWord}');
-        _shouldRestartListening = true;
+        // Service handles restart automatically now
       } else {
         print('Word did not change: $previousWord');
       }
-      
+
       // Reset processing after delay - longer delay to prevent rapid re-processing
       Future.delayed(Duration(milliseconds: 2000), () {
         if (mounted) {
@@ -217,21 +230,21 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     } else {
       // Incorrect attempt
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-      
+
       final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
       print('Incorrect attempt. Current attempts: $newAttempts');
-      
+
       if (newAttempts >= 2) {
         confettiManager.wrongConfettiController.play();
       }
-      
+
       if (newAttempts >= 3) {
         _handleMaxAttemptsReached();
       } else {
         setState(() {
           _recognizedWord = 'Try again: $recognizedWord';
         });
-        
+
         Future.delayed(Duration(milliseconds: 1500), () {
           if (mounted) {
             _isProcessing = false;
@@ -243,15 +256,15 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
   void _handleMaxAttemptsReached() {
     print('Maximum attempts reached, moving to next word...');
-    
+
     setState(() {
       _recognizedWord = 'Moving to next word...';
     });
-    
+
     ref.read(wordGameStateProvider.notifier).handleAnswer('');
-    
-    _shouldRestartListening = true;
-    
+
+    // _shouldRestartListening = true; // Handled by service
+
     Future.delayed(Duration(milliseconds: 2000), () {
       if (mounted) {
         final newState = ref.read(wordGameStateProvider);
@@ -263,28 +276,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     });
   }
 
-  void _checkAndRestartListening() {
-    if (isListening && _shouldRestartListening && mounted) {
-      print('Restarting continuous listening...');
-      _shouldRestartListening = false;
-      
-      _speechRecognitionService.stopListening();
-      
-      Future.delayed(Duration(milliseconds: 1500), () {
-        if (mounted && isListening) {
-          _startContinuousSpeechRecognition();
-        }
-      });
-    }
-  }
-
   void _stopSpeechRecognition() {
     _speechRecognitionService.stopListening();
     setState(() {
       isListening = false;
       _recognizedWord = '';
       _isProcessing = false;
-      _shouldRestartListening = false;
     });
   }
 
@@ -343,6 +340,38 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       title: const Text('Read Mode'),
       centerTitle: true,
       actions: [
+        if (_locales.isNotEmpty)
+          DropdownButton<String>(
+            value: _selectedLocaleId,
+            icon: const Icon(Icons.language, color: Colors.white),
+            dropdownColor: theme.primaryColor,
+            underline: Container(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedLocaleId = newValue;
+              });
+              // Restart listening if active
+              if (isListening) {
+                _stopSpeechRecognition();
+                Future.delayed(Duration(milliseconds: 500), () {
+                  _startContinuousSpeechRecognition();
+                });
+              }
+            },
+            items:
+                _locales.map<DropdownMenuItem<String>>((stt.LocaleName locale) {
+              return DropdownMenuItem<String>(
+                value: locale.localeId,
+                child: Text(
+                  locale.name,
+                  style: TextStyle(
+                      color: _selectedLocaleId == locale.localeId
+                          ? theme.colorScheme.primary
+                          : Colors.black),
+                ),
+              );
+            }).toList(),
+          ),
         _buildTimerWidget(theme),
         _buildActionButtons(),
       ],
