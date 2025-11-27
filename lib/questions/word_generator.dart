@@ -138,6 +138,13 @@ class WordGameService {
       }
     }
 
+    // If incorrect and not skipping (empty string), increment attempts and return
+    if (!isCorrect && selectedItem.isNotEmpty) {
+      return currentState.copyWith(
+        incorrectAttempts: currentState.incorrectAttempts + 1,
+      );
+    }
+
     int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     int elapsedTime = currentTime - currentState.startTime;
 
