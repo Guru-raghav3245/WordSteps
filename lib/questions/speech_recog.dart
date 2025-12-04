@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,6 +8,8 @@ class SpeechRecognitionService {
   Function(String)? _onResultCallback;
   bool _isContinuous = false;
   String? _currentLocaleId;
+  bool _shouldAutoRestart = true;
+  Timer? _restartTimer;
 
   Future<void> initializeSpeech() async {
     // Request microphone permission
@@ -18,24 +21,42 @@ class SpeechRecognitionService {
     bool available = await _speechToText.initialize(
       onStatus: (status) {
         print('Speech status: $status');
-        if ((status == 'done' || status == 'notListening') && _isContinuous) {
-          print('Auto-restarting continuous listening...');
-          // Add a small delay to prevent rapid loops
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (_isContinuous) {
-              // We don't have the localeId here easily without storing it,
-              // but for now let's assume it uses the last used or default.
-              // To do this properly, we should store the current localeId in the service.
+
+        // Only restart for specific statuses and if continuous mode is active
+        if (_isContinuous && _shouldAutoRestart) {
+          if (status == 'done' || status == 'notListening') {
+            print('Auto-restarting continuous listening...');
+
+            // Cancel any existing restart timer
+            _restartTimer?.cancel();
+
+            // Use a more reasonable delay to prevent rapid restarts
+            _restartTimer = Timer(const Duration(milliseconds: 500), () {
+              if (_isContinuous &&
+                  _shouldAutoRestart &&
+                  !_speechToText.isListening) {
+                _startListeningInternal(localeId: _currentLocaleId);
+              }
+            });
+          }
+        }
+      },
+      onError: (error) {
+        print('Speech error: $error');
+        // For errors, wait longer before restarting
+        if (_isContinuous && _shouldAutoRestart) {
+          _restartTimer?.cancel();
+          _restartTimer = Timer(const Duration(seconds: 2), () {
+            if (_isContinuous &&
+                _shouldAutoRestart &&
+                !_speechToText.isListening) {
               _startListeningInternal(localeId: _currentLocaleId);
             }
           });
         }
       },
-      onError: (error) {
-        print('Speech error: $error');
-        // Optionally handle error-based restarts here if needed
-      },
     );
+
     if (!available) {
       throw Exception('Speech recognition not available');
     }
@@ -51,32 +72,50 @@ class SpeechRecognitionService {
   }) async {
     _onResultCallback = onResult;
     _isContinuous = true;
+    _shouldAutoRestart = true;
     _currentLocaleId = localeId;
+
+    // Cancel any pending restart
+    _restartTimer?.cancel();
+
     await _startListeningInternal(localeId: localeId);
   }
 
   Future<void> _startListeningInternal({String? localeId}) async {
-    if (!_isContinuous) return;
+    if (!_isContinuous || _speechToText.isListening) return;
 
     try {
       await _speechToText.listen(
         onResult: (result) {
           if (result.recognizedWords.isNotEmpty) {
             final recognizedText = result.recognizedWords.trim();
-            // print('Continuous recognition: $recognizedText');
             _onResultCallback?.call(recognizedText);
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 5),
+        // Increased listen duration to reduce restart frequency
+        listenFor: const Duration(minutes: 5), // Increased from 30 seconds
+        pauseFor: const Duration(seconds: 10), // Increased pause time
         partialResults: true,
         onDevice: true,
         localeId: localeId,
         listenMode: stt.ListenMode.dictation,
         cancelOnError: false,
+        // Add these to reduce start/stop sounds
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+        ),
       );
     } catch (e) {
       print('Error starting listening: $e');
+      // If error occurs, wait before retrying
+      if (_isContinuous) {
+        _restartTimer?.cancel();
+        _restartTimer = Timer(const Duration(seconds: 2), () {
+          if (_isContinuous && !_speechToText.isListening) {
+            _startListeningInternal(localeId: localeId);
+          }
+        });
+      }
     }
   }
 
@@ -104,8 +143,18 @@ class SpeechRecognitionService {
   }
 
   void stopListening() {
-    _speechToText.stop();
+    _shouldAutoRestart = false;
     _isContinuous = false;
+    _restartTimer?.cancel();
+    _speechToText.stop();
+  }
+
+  void pauseAutoRestart() {
+    _shouldAutoRestart = false;
+  }
+
+  void resumeAutoRestart() {
+    _shouldAutoRestart = true;
   }
 
   bool get isListening => _speechToText.isListening;

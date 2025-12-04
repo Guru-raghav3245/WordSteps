@@ -56,6 +56,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _speechRecognitionService.stopListening();
     confettiManager.dispose();
     _duplicatePreventionTimer?.cancel();
+    _debounceTimer?.cancel(); // Add this
     super.dispose();
   }
 
@@ -114,7 +115,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           isListening = true;
           _recognizedWord = 'Listening...';
           _isProcessing = false;
-          _lastProcessedWord = ''; // Reset when starting new session
+          _lastProcessedWord = '';
         });
 
         await _speechRecognitionService.startContinuousListening(
@@ -132,7 +133,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             if (recognizedWord.isNotEmpty &&
                 recognizedWord != 'Listening...' &&
                 !_isProcessing) {
-              _processSpeechResult(recognizedWord);
+              // Debounce the processing to prevent rapid calls
+              _debounceProcessSpeechResult(recognizedWord);
             }
           },
         );
@@ -147,6 +149,18 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         _recognizedWord = 'Error: ${e.toString()}';
       });
     }
+  }
+
+  Timer? _debounceTimer;
+
+  void _debounceProcessSpeechResult(String recognizedWord) {
+    // Cancel any existing timer
+    _debounceTimer?.cancel();
+
+    // Set a new timer with a reasonable delay
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+      _processSpeechResult(recognizedWord);
+    });
   }
 
   void _processSpeechResult(String recognizedWord) {
@@ -196,6 +210,11 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
       final previousWord = correctWord;
 
+      // **CRITICAL: Temporarily disable speech recognition to prevent sounds**
+      if (_speechRecognitionService.isListening) {
+        _speechRecognitionService.stopListening();
+      }
+
       // Handle the correct answer - this should move to next word
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
 
@@ -210,17 +229,48 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
       });
 
-      // Only restart listening if the word actually changed
-      if (newState.correctWord != previousWord) {
-        print('Word changed from $previousWord to ${newState.correctWord}');
-        // Service handles restart automatically now
-      } else {
-        print('Word did not change: $previousWord');
-      }
-
-      // Reset processing after delay - longer delay to prevent rapid re-processing
-      Future.delayed(Duration(milliseconds: 2000), () {
+      // **IMPORTANT: Wait and restart listening SILENTLY**
+      Future.delayed(Duration(milliseconds: 2000), () async {
         if (mounted) {
+          // Only restart if the word changed and we're supposed to be listening
+          if (newState.correctWord != previousWord && isListening) {
+            print('Word changed from $previousWord to ${newState.correctWord}');
+
+            // Restart listening with a longer delay to avoid sound
+            await Future.delayed(Duration(milliseconds: 500));
+
+            if (mounted && isListening) {
+              try {
+                // Use a fresh start without stopping first
+                if (!_speechRecognitionService.isListening) {
+                  await _speechRecognitionService.startContinuousListening(
+                    localeId: _selectedLocaleId,
+                    onResult: (newRecognizedWord) {
+                      if (!mounted || _isProcessing) return;
+
+                      print('New Recognized: $newRecognizedWord');
+
+                      setState(() {
+                        _recognizedWord = newRecognizedWord.isEmpty
+                            ? 'Listening...'
+                            : newRecognizedWord;
+                      });
+
+                      if (newRecognizedWord.isNotEmpty &&
+                          newRecognizedWord != 'Listening...' &&
+                          !_isProcessing) {
+                        _processSpeechResult(newRecognizedWord);
+                      }
+                    },
+                  );
+                }
+              } catch (e) {
+                print('Error restarting speech: $e');
+              }
+            }
+          }
+
+          // Reset processing state
           setState(() {
             _recognizedWord = 'Listening...';
             _isProcessing = false;
@@ -245,9 +295,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           _recognizedWord = 'Try again: $recognizedWord';
         });
 
+        // Don't stop/restart speech for incorrect attempts - keep it continuous
         Future.delayed(Duration(milliseconds: 1500), () {
           if (mounted) {
             _isProcessing = false;
+            // Update to listening state
+            setState(() {
+              _recognizedWord = 'Listening...';
+            });
           }
         });
       }
@@ -257,20 +312,55 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   void _handleMaxAttemptsReached() {
     print('Maximum attempts reached, moving to next word...');
 
+    // Stop listening temporarily
+    if (_speechRecognitionService.isListening) {
+      _speechRecognitionService.stopListening();
+    }
+
     setState(() {
-      _recognizedWord = 'Moving to next word...';
+      _recognizedWord = 'Maximum attempts reached. Moving to next word...';
     });
 
-    ref.read(wordGameStateProvider.notifier).handleAnswer('');
-
-    // _shouldRestartListening = true; // Handled by service
-
-    Future.delayed(Duration(milliseconds: 2000), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        final newState = ref.read(wordGameStateProvider);
-        setState(() {
-          _recognizedWord = 'Listening for: ${newState.correctWord}';
-          _isProcessing = false;
+        // Move to next word
+        ref.read(wordGameStateProvider.notifier).handleAnswer('');
+
+        // Wait and restart listening
+        Future.delayed(Duration(milliseconds: 1000), () async {
+          if (mounted && isListening) {
+            try {
+              if (!_speechRecognitionService.isListening) {
+                await _speechRecognitionService.startContinuousListening(
+                  localeId: _selectedLocaleId,
+                  onResult: (recognizedWord) {
+                    if (!mounted || _isProcessing) return;
+
+                    print('Continuous Recognized: $recognizedWord');
+
+                    setState(() {
+                      _recognizedWord = recognizedWord.isEmpty
+                          ? 'Listening...'
+                          : recognizedWord;
+                    });
+
+                    if (recognizedWord.isNotEmpty &&
+                        recognizedWord != 'Listening...' &&
+                        !_isProcessing) {
+                      _processSpeechResult(recognizedWord);
+                    }
+                  },
+                );
+              }
+            } catch (e) {
+              print('Error restarting speech after max attempts: $e');
+            }
+
+            setState(() {
+              _recognizedWord = 'Listening...';
+              _isProcessing = false;
+            });
+          }
         });
       }
     });
