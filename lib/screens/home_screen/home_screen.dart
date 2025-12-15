@@ -1,3 +1,4 @@
+// File: lib1/screens/home_screen/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,15 +6,47 @@ import 'package:word_app/screens/practice_screen/practice_screen.dart';
 import 'package:word_app/questions/word_generator.dart';
 import 'package:word_app/questions/content_type.dart';
 import 'drawer.dart';
+import 'timer_wheel_picker.dart';
 
 final gameModeProvider = StateProvider<String>((ref) => 'read');
 final wordLengthProvider = StateProvider<int>((ref) => 3);
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  int? _selectedTimeLimit;
+  int _selectedIndex = 0; // 0 = No Limit
+
+  void _showTimeWheelPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return TimeWheelPicker(
+          initialIndex: _selectedIndex,
+          onConfirm: (index) {
+            setState(() {
+              _selectedIndex = index;
+              if (_selectedIndex == 0) {
+                _selectedTimeLimit = null;
+              } else {
+                _selectedTimeLimit =
+                    _selectedIndex * 60; // Convert minutes to seconds
+              }
+            });
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -42,7 +75,7 @@ class HomeScreen extends ConsumerWidget {
                   DropdownMenuItem(value: 'read', child: Text('Listen Mode')),
                   DropdownMenuItem(
                     value: 'listen',
-                    child: Text('Read Mode'), // Removed "Work in Progress"
+                    child: Text('Read Mode'),
                   ),
                 ],
                 onChanged: (value) {
@@ -58,23 +91,17 @@ class HomeScreen extends ConsumerWidget {
                 value: ref.watch(contentTypeProvider),
                 items: [
                   const DropdownMenuItem(
-                      value: ContentType.kumon7a,
-                      child: Text('7A Sentences')),
+                      value: ContentType.kumon7a, child: Text('7A Sentences')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon6a,
-                      child: Text('6A Sentences')),
+                      value: ContentType.kumon6a, child: Text('6A Sentences')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon5a,
-                      child: Text('5A Sentences')),
+                      value: ContentType.kumon5a, child: Text('5A Sentences')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon4a,
-                      child: Text('4A Sentences')),
+                      value: ContentType.kumon4a, child: Text('4A Sentences')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon3a,
-                      child: Text('3A Sentences')),
+                      value: ContentType.kumon3a, child: Text('3A Sentences')),
                   const DropdownMenuItem(
-                      value: ContentType.kumon2a,
-                      child: Text('2A Sentences')),
+                      value: ContentType.kumon2a, child: Text('2A Sentences')),
                   const DropdownMenuItem(
                       value: ContentType.wordLength3,
                       child: Text('3 Letter Words')),
@@ -116,6 +143,9 @@ class HomeScreen extends ConsumerWidget {
                   ref.read(contentTypeProvider.notifier).state = value!;
                 },
               ),
+              const SizedBox(height: 10),
+              // Timer Selection Card
+              _buildTimerCard(context),
               const SizedBox(height: 40),
               _buildActionButton(
                 context,
@@ -125,11 +155,62 @@ class HomeScreen extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const PracticeScreen()),
+                        builder: (context) => PracticeScreen(
+                              sessionTimeLimit: _selectedTimeLimit,
+                            )),
                   );
                 },
               ),
               const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimerCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () => _showTimeWheelPicker(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Session Time Limit',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                decoration: BoxDecoration(
+                  border:
+                      Border.all(color: theme.dividerColor.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedTimeLimit == null
+                          ? 'No time limit'
+                          : '${_selectedTimeLimit! ~/ 60} minute${_selectedTimeLimit! ~/ 60 == 1 ? '' : 's'}',
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

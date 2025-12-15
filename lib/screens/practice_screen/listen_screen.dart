@@ -1,3 +1,4 @@
+// File: lib1/screens/practice_screen/listen_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/questions/word_generator.dart';
@@ -11,6 +12,7 @@ class GameScreenProps {
   final VoidCallback resumeTimer;
   final VoidCallback showQuitDialog;
   final VoidCallback endQuiz;
+  final int? sessionTimeLimit;
 
   const GameScreenProps({
     required this.elapsedTime,
@@ -18,6 +20,7 @@ class GameScreenProps {
     required this.resumeTimer,
     required this.showQuitDialog,
     required this.endQuiz,
+    this.sessionTimeLimit,
   });
 }
 
@@ -145,8 +148,15 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
+    int timeToDisplay = seconds;
+    // Calculate remaining time if a limit is set
+    if (widget.props.sessionTimeLimit != null) {
+      timeToDisplay = widget.props.sessionTimeLimit! - seconds;
+      if (timeToDisplay < 0) timeToDisplay = 0;
+    }
+
+    int minutes = timeToDisplay ~/ 60;
+    int remainingSeconds = timeToDisplay % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
@@ -159,8 +169,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Listen Mode'),
-        centerTitle: false, 
-        titleSpacing: 16.0, 
+        centerTitle: false,
+        titleSpacing: 16.0,
         backgroundColor: theme.colorScheme.primary,
         actions: [
           ScaleTransition(

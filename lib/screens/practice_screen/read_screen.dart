@@ -1,3 +1,4 @@
+// File: lib1/screens/practice_screen/read_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
@@ -14,6 +15,7 @@ class ReadModeScreen extends ConsumerStatefulWidget {
   final VoidCallback resumeTimer;
   final VoidCallback showQuitDialog;
   final VoidCallback endQuiz;
+  final int? sessionTimeLimit;
 
   const ReadModeScreen({
     super.key,
@@ -22,6 +24,7 @@ class ReadModeScreen extends ConsumerStatefulWidget {
     required this.resumeTimer,
     required this.showQuitDialog,
     required this.endQuiz,
+    this.sessionTimeLimit,
   });
 
   @override
@@ -34,14 +37,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   late final ConfettiManager confettiManager;
   bool _isProcessing = false;
   String _previousWord = '';
-  String _lastProcessedWord =
-      ''; // Track last processed word to avoid duplicates
-  Timer? _duplicatePreventionTimer; // Timer to prevent duplicate processing
+  String _lastProcessedWord = '';
+  Timer? _duplicatePreventionTimer;
 
   List<stt.LocaleName> _locales = [];
   String? _selectedLocaleId;
 
   late SpeechRecognitionService _speechRecognitionService;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -56,7 +59,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _speechRecognitionService.stopListening();
     confettiManager.dispose();
     _duplicatePreventionTimer?.cancel();
-    _debounceTimer?.cancel(); // Add this
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -67,8 +70,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       if (mounted) {
         setState(() {
           _locales = locales;
-          // Try to find a good default, e.g., system default or English US
-          // For now, let's just pick the first one or 'en_US' if available
           try {
             _selectedLocaleId =
                 locales.firstWhere((l) => l.localeId == 'en_US').localeId;
@@ -133,7 +134,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             if (recognizedWord.isNotEmpty &&
                 recognizedWord != 'Listening...' &&
                 !_isProcessing) {
-              // Debounce the processing to prevent rapid calls
               _debounceProcessSpeechResult(recognizedWord);
             }
           },
@@ -151,20 +151,15 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     }
   }
 
-  Timer? _debounceTimer;
-
   void _debounceProcessSpeechResult(String recognizedWord) {
-    // Cancel any existing timer
     _debounceTimer?.cancel();
 
-    // Set a new timer with a reasonable delay
     _debounceTimer = Timer(const Duration(milliseconds: 800), () {
       _processSpeechResult(recognizedWord);
     });
   }
 
   void _processSpeechResult(String recognizedWord) {
-    // Prevent duplicate processing of the same word within 2 seconds
     if (_isProcessing ||
         (recognizedWord == _lastProcessedWord &&
             _duplicatePreventionTimer != null)) {
@@ -175,7 +170,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     _isProcessing = true;
     _lastProcessedWord = recognizedWord;
 
-    // Set timer to prevent duplicate processing for 2 seconds
     _duplicatePreventionTimer?.cancel();
     _duplicatePreventionTimer = Timer(Duration(seconds: 2), () {
       _lastProcessedWord = '';
@@ -184,7 +178,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     final currentState = ref.read(wordGameStateProvider);
     final correctWord = currentState.correctWord;
 
-    // Normalize both strings for comparison
     String normalizedRecognized = recognizedWord
         .toLowerCase()
         .replaceAll(RegExp(r'[^\w\s]'), '')
@@ -202,46 +195,36 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     double similarity = normalizedRecognized.similarityTo(normalizedCorrect);
     print('Similarity score: $similarity');
 
-    bool isCorrect = normalizedRecognized.contains(normalizedCorrect) ||
-        similarity > 0.6; // Lowered threshold slightly for better experience
+    bool isCorrect =
+        normalizedRecognized.contains(normalizedCorrect) || similarity > 0.6;
 
     if (isCorrect) {
       print('Correct answer detected! Moving to next question...');
 
       final previousWord = correctWord;
 
-      // **CRITICAL: Temporarily disable speech recognition to prevent sounds**
       if (_speechRecognitionService.isListening) {
         _speechRecognitionService.stopListening();
       }
 
-      // Handle the correct answer - this should move to next word
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-
-      // Show confetti
       confettiManager.correctConfettiController.play();
 
-      // Get the new state
       final newState = ref.read(wordGameStateProvider);
 
-      // Update UI
       setState(() {
         _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
       });
 
-      // **IMPORTANT: Wait and restart listening SILENTLY**
       Future.delayed(Duration(milliseconds: 2000), () async {
         if (mounted) {
-          // Only restart if the word changed and we're supposed to be listening
           if (newState.correctWord != previousWord && isListening) {
             print('Word changed from $previousWord to ${newState.correctWord}');
 
-            // Restart listening with a longer delay to avoid sound
             await Future.delayed(Duration(milliseconds: 500));
 
             if (mounted && isListening) {
               try {
-                // Use a fresh start without stopping first
                 if (!_speechRecognitionService.isListening) {
                   await _speechRecognitionService.startContinuousListening(
                     localeId: _selectedLocaleId,
@@ -270,7 +253,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             }
           }
 
-          // Reset processing state
           setState(() {
             _recognizedWord = 'Listening...';
             _isProcessing = false;
@@ -278,7 +260,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         }
       });
     } else {
-      // Incorrect attempt
       ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
 
       final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
@@ -295,11 +276,9 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
           _recognizedWord = 'Try again: $recognizedWord';
         });
 
-        // Don't stop/restart speech for incorrect attempts - keep it continuous
         Future.delayed(Duration(milliseconds: 1500), () {
           if (mounted) {
             _isProcessing = false;
-            // Update to listening state
             setState(() {
               _recognizedWord = 'Listening...';
             });
@@ -312,7 +291,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   void _handleMaxAttemptsReached() {
     print('Maximum attempts reached, moving to next word...');
 
-    // Stop listening temporarily
     if (_speechRecognitionService.isListening) {
       _speechRecognitionService.stopListening();
     }
@@ -323,10 +301,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        // Move to next word
         ref.read(wordGameStateProvider.notifier).handleAnswer('');
 
-        // Wait and restart listening
         Future.delayed(Duration(milliseconds: 1000), () async {
           if (mounted && isListening) {
             try {
@@ -376,8 +352,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   }
 
   String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
+    int timeToDisplay = seconds;
+    if (widget.sessionTimeLimit != null) {
+      timeToDisplay = widget.sessionTimeLimit! - seconds;
+      if (timeToDisplay < 0) timeToDisplay = 0;
+    }
+
+    int minutes = timeToDisplay ~/ 60;
+    int remainingSeconds = timeToDisplay % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
@@ -386,7 +368,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     final theme = Theme.of(context);
     final wordGameState = ref.watch(wordGameStateProvider);
 
-    // Watch for word changes
     if (wordGameState.correctWord != _previousWord) {
       _previousWord = wordGameState.correctWord;
       _isProcessing = false;
@@ -440,7 +421,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
               setState(() {
                 _selectedLocaleId = newValue;
               });
-              // Restart listening if active
               if (isListening) {
                 _stopSpeechRecognition();
                 Future.delayed(Duration(milliseconds: 500), () {

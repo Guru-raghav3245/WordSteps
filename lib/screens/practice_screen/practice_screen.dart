@@ -1,3 +1,4 @@
+// File: lib1/screens/practice_screen/practice_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,9 @@ import 'package:word_app/screens/home_screen/home_screen.dart';
 import 'listen_screen.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
-  const PracticeScreen({super.key});
+  final int? sessionTimeLimit;
+
+  const PracticeScreen({super.key, this.sessionTimeLimit});
 
   @override
   _PracticeScreenState createState() => _PracticeScreenState();
@@ -39,6 +42,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       (timer) {
         if (!_isPaused) {
           setState(() => _elapsedTime++);
+          // Check if time limit is reached
+          if (widget.sessionTimeLimit != null &&
+              _elapsedTime >= widget.sessionTimeLimit!) {
+            _navigateToResults();
+          }
         }
       },
     );
@@ -92,7 +100,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           answeredQuestions: gameState.answeredQuestions,
           answeredCorrectly: gameState.answeredCorrectly,
           totalTime: _elapsedTime,
-          switchToStartScreen: () => Navigator.of(context).popUntil((route) => route.isFirst),
+          switchToStartScreen: () =>
+              Navigator.of(context).popUntil((route) => route.isFirst),
           userSelectedWords: gameState.userSelectedWords,
         ),
       ),
@@ -108,6 +117,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       resumeTimer: _togglePause,
       showQuitDialog: _showQuitDialog,
       endQuiz: _navigateToResults,
+      sessionTimeLimit: widget.sessionTimeLimit,
     );
 
     return _buildGameScreen(gameMode, screenProps);
@@ -124,6 +134,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           resumeTimer: props.resumeTimer,
           showQuitDialog: props.showQuitDialog,
           endQuiz: props.endQuiz,
+          sessionTimeLimit: widget.sessionTimeLimit,
         );
       default:
         return _buildErrorScreen();

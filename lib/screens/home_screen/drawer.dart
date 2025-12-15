@@ -1,3 +1,4 @@
+// File: lib1/screens/home_screen/drawer.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/support_screen.dart';
@@ -5,6 +6,9 @@ import 'package:word_app/screens/settings_screen.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
 import 'package:word_app/quiz_history/quiz_history_screen.dart';
 import 'package:word_app/theme_provider.dart';
+// Import the new screens
+import '../faq_screen.dart';
+import '../how_to_use_screen.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -17,6 +21,7 @@ class AppDrawer extends ConsumerWidget {
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.75,
       child: Container(
+        // Keeping the primary color background style from your original file
         color: theme.colorScheme.primary,
         child: ListView(
           padding: EdgeInsets.zero,
@@ -28,14 +33,14 @@ class AppDrawer extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.calculate,
+                  const Icon(
+                    Icons.menu_book, // Updated icon to be more relevant
                     size: 50,
                     color: Colors.white,
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Word Guessing Game',
+                    'WordSteps',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -49,6 +54,20 @@ class AppDrawer extends ConsumerWidget {
               icon: Icons.home,
               title: 'Home',
               onTap: () => _navigateTo(context, const HomeScreen()),
+            ),
+            // --- NEW ITEM ---
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.help_outline,
+              title: 'How to Use',
+              onTap: () => _navigateTo(context, const HowToUseScreen()),
+            ),
+            // --- NEW ITEM ---
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.question_answer,
+              title: 'FAQ',
+              onTap: () => _navigateTo(context, const FAQScreen()),
             ),
             _buildDrawerItem(
               context: context,
