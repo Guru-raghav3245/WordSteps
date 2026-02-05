@@ -1,4 +1,4 @@
-// File: lib1/screens/practice_screen/listen_screen.dart
+// File: lib/screens/practice_screen/listen_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/questions/word_generator.dart';
@@ -55,6 +55,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   Future<void> _sendReportEmail() async {
+    widget.props.onUserInteraction(); // Reset on report
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
 
@@ -89,6 +90,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _handleSpeakTap(ThemeData theme) async {
+    widget.props.onUserInteraction(); // Reset on speaker tap
     if (!_canTap) return;
     setState(() {
       _canTap = false;
@@ -116,6 +118,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _handleWordSelection(String word) {
+    widget.props.onUserInteraction(); // Reset on option selection
     if (word == ref.read(wordGameStateProvider).correctWord) {
       confettiManager.correctConfettiController.play();
     }
@@ -132,7 +135,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
 
   String _formatTime(int seconds) {
     int timeToDisplay = seconds;
-    // Calculate remaining time if a limit is set
     if (widget.props.sessionTimeLimit != null) {
       timeToDisplay = widget.props.sessionTimeLimit! - seconds;
       if (timeToDisplay < 0) timeToDisplay = 0;
@@ -159,7 +161,10 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ScaleTransition(
             scale: _scaleAnimation,
             child: ElevatedButton.icon(
-              onPressed: widget.props.showQuitDialog,
+              onPressed: () {
+                widget.props.onUserInteraction();
+                widget.props.showQuitDialog();
+              },
               icon: const Icon(Icons.close, size: 20),
               label: const Text('Quit'),
               style: ElevatedButton.styleFrom(
@@ -177,7 +182,10 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ScaleTransition(
             scale: _scaleAnimation,
             child: ElevatedButton.icon(
-              onPressed: widget.props.endQuiz,
+              onPressed: () {
+                widget.props.onUserInteraction();
+                widget.props.endQuiz();
+              },
               icon: const Icon(Icons.check, size: 20),
               label: const Text('End'),
               style: ElevatedButton.styleFrom(
@@ -210,6 +218,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         children: [
                           FloatingActionButton(
                             onPressed: () {
+                              widget.props.onUserInteraction();
                               ref
                                   .read(wordGameStateProvider.notifier)
                                   .togglePause();
@@ -222,7 +231,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                             backgroundColor: theme.colorScheme.primary,
                             tooltip: 'Pause Game',
                             child: Icon(
-                              Icons.pause,
+                              wordGameState.isPaused ? Icons.play_arrow : Icons.pause,
                               size: 36,
                               color: theme.colorScheme.onPrimary,
                             ),
@@ -430,6 +439,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                           max: 1.0,
                           divisions: 20,
                           onChanged: (value) {
+                            widget.props.onUserInteraction(); // Reset on volume change
                             setState(() {
                               _volume = value;
                             });
