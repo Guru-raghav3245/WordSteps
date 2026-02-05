@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:google_fonts/google_fonts.dart'; // Import this
 
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
@@ -7,14 +8,14 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: Colors.red,
       secondary: Colors.redAccent,
-      onPrimary: Colors.white, // Text/icons on primary color
+      onPrimary: Colors.white,
       surface: Colors.white,
       onSurface: Colors.black87,
     ),
     scaffoldBackgroundColor: const Color(0xFFF5F5F5),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.red,
-      foregroundColor: Colors.white, // AppBar text/icons
+      foregroundColor: Colors.white,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
@@ -31,13 +32,16 @@ class AppTheme {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     iconTheme: const IconThemeData(
-      color: Colors.white, // Default icon color
+      color: Colors.white,
     ),
-    textTheme: const TextTheme(
-      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      bodyLarge: TextStyle(fontSize: 16),
-      bodyMedium: TextStyle(fontSize: 14),
-    ).apply(fontFamily: 'Roboto'),
+    // UPDATED: Use GoogleFonts.poppinsTextTheme
+    textTheme: GoogleFonts.poppinsTextTheme(
+      const TextTheme(
+        headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        bodyLarge: TextStyle(fontSize: 16),
+        bodyMedium: TextStyle(fontSize: 14),
+      ),
+    ),
     sliderTheme: const SliderThemeData(
       activeTrackColor: Colors.red,
       inactiveTrackColor: Colors.redAccent,
@@ -50,14 +54,14 @@ class AppTheme {
     colorScheme: const ColorScheme.dark(
       primary: Colors.red,
       secondary: Colors.redAccent,
-      onPrimary: Colors.white, // Text/icons on primary color
+      onPrimary: Colors.white,
       surface: Color(0xFF1E1E1E),
       onSurface: Colors.white70,
     ),
     scaffoldBackgroundColor: const Color(0xFF121212),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.red,
-      foregroundColor: Colors.white, // AppBar text/icons
+      foregroundColor: Colors.white,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
@@ -74,13 +78,17 @@ class AppTheme {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     iconTheme: const IconThemeData(
-      color: Colors.white, // Default icon color
+      color: Colors.white,
     ),
-    textTheme: const TextTheme(
-      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      bodyLarge: TextStyle(fontSize: 16),
-      bodyMedium: TextStyle(fontSize: 14),
-    ).apply(fontFamily: 'Roboto'),
+    // UPDATED: Use GoogleFonts.poppinsTextTheme
+    textTheme: GoogleFonts.poppinsTextTheme(
+      ThemeData.dark().textTheme.copyWith(
+            headlineMedium:
+                const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            bodyLarge: const TextStyle(fontSize: 16),
+            bodyMedium: const TextStyle(fontSize: 14),
+          ),
+    ),
     sliderTheme: const SliderThemeData(
       activeTrackColor: Colors.red,
       inactiveTrackColor: Colors.redAccent,

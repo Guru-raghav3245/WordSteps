@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Added for orientation lock
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:word_app/screens/home_screen/home_screen.dart';
+import 'package:word_app/screens/splash_screen.dart'; // Import the splash screen
 import 'theme_provider.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Replicating the orientation lock from the Math app
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) {
+    runApp(const ProviderScope(child: MyApp()));
+  });
 }
 
 class MyApp extends ConsumerWidget {
@@ -20,7 +29,7 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const HomeScreen(),
+      home: const SplashScreen(), // Changed from HomeScreen to SplashScreen
     );
   }
 }
