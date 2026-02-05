@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/result_screen/result_screen.dart';
-import 'modals/pause_modal.dart';
 import 'modals/quit_modal.dart';
+import 'modals/inactivity_modal.dart';
 import '/questions/word_generator.dart';
 import 'read_screen.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
@@ -12,69 +12,106 @@ import 'listen_screen.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   final int? sessionTimeLimit;
-
   const PracticeScreen({super.key, this.sessionTimeLimit});
 
   @override
-  _PracticeScreenState createState() => _PracticeScreenState();
+  ConsumerState<PracticeScreen> createState() => _PracticeScreenState();
 }
 
 class _PracticeScreenState extends ConsumerState<PracticeScreen> {
-  late Timer _timer;
+  late Timer _gameTimer;
+  Timer? _inactivityTimer;
+
   int _elapsedTime = 0;
   bool _isPaused = false;
+
+  DateTime _lastInteractionTime = DateTime.now();
+
+  static const int inactivityThresholdSeconds = 10;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _lastInteractionTime = DateTime.now();
+    _startGameTimer();
+    _scheduleInactivityCheck();
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _gameTimer.cancel();
+    _inactivityTimer?.cancel();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (timer) {
-        if (!_isPaused) {
-          setState(() => _elapsedTime++);
-          // Check if time limit is reached
-          if (widget.sessionTimeLimit != null &&
-              _elapsedTime >= widget.sessionTimeLimit!) {
-            _navigateToResults();
-          }
-        }
-      },
-    );
-  }
+  // ────────────────────────────────────────────────
+  //  Game Timer (counts elapsed time)
+  // ────────────────────────────────────────────────
+  void _startGameTimer() {
+    _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isPaused) {
+        setState(() {
+          _elapsedTime++;
+        });
 
-  void _togglePause() {
-    setState(() {
-      _isPaused = !_isPaused;
-      if (_isPaused) {
-        _timer.cancel();
-        _showPauseDialog();
-      } else {
-        _startTimer();
+        if (widget.sessionTimeLimit != null &&
+            _elapsedTime >= widget.sessionTimeLimit!) {
+          _navigateToResults();
+        }
       }
     });
   }
 
-  void _showPauseDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PauseDialog(
-        onResume: () {
-          Navigator.of(context).pop();
-          _togglePause();
-        },
-      ),
+  // ────────────────────────────────────────────────
+  //  Inactivity Logic – single shot timer
+  // ────────────────────────────────────────────────
+  void _scheduleInactivityCheck() {
+    _inactivityTimer?.cancel();
+
+    _inactivityTimer = Timer(
+      Duration(seconds: inactivityThresholdSeconds),
+      _checkInactivityAndShowModalIfNeeded,
     );
+  }
+
+  void _checkInactivityAndShowModalIfNeeded() {
+    if (!mounted || _isPaused) return;
+
+    final now = DateTime.now();
+    final inactiveSeconds = now.difference(_lastInteractionTime).inSeconds;
+
+    if (inactiveSeconds >= inactivityThresholdSeconds) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => InActivityModal(
+          onResume: () {
+            Navigator.of(dialogContext).pop();
+            _resetInactivity(); // Important: reset after resume
+          },
+        ),
+      );
+    }
+  }
+
+  void _resetInactivity() {
+    _lastInteractionTime = DateTime.now();
+    _scheduleInactivityCheck(); // re-arm the timer
+  }
+
+  // ────────────────────────────────────────────────
+  //  Pause / Resume
+  // ────────────────────────────────────────────────
+  void _togglePause() {
+    setState(() {
+      _isPaused = !_isPaused;
+    });
+
+    if (_isPaused) {
+      _inactivityTimer?.cancel();
+    } else {
+      _resetInactivity(); // restart inactivity watch when resuming
+    }
   }
 
   void _showQuitDialog() {
@@ -82,17 +119,16 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       context: context,
       builder: (context) => QuitDialog(
         onQuit: () {
-          _timer.cancel();
-          ref.read(wordGameStateProvider.notifier).quitGame();
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          Navigator.pop(context); // close dialog
+          _navigateToHome();
         },
       ),
     );
   }
 
   void _navigateToResults() {
-    _timer.cancel();
     final gameState = ref.read(wordGameStateProvider);
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -100,17 +136,26 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           answeredQuestions: gameState.answeredQuestions,
           answeredCorrectly: gameState.answeredCorrectly,
           totalTime: _elapsedTime,
-          switchToStartScreen: () =>
-              Navigator.of(context).popUntil((route) => route.isFirst),
           userSelectedWords: gameState.userSelectedWords,
+          shouldSave: true,
         ),
       ),
+    );
+  }
+
+  void _navigateToHome() {
+    ref.read(wordGameStateProvider.notifier).clearGameState();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final gameMode = ref.watch(gameModeProvider);
+
     final screenProps = GameScreenProps(
       elapsedTime: _elapsedTime,
       pauseTimer: _togglePause,
@@ -118,6 +163,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       showQuitDialog: _showQuitDialog,
       endQuiz: _navigateToResults,
       sessionTimeLimit: widget.sessionTimeLimit,
+      onUserInteraction: _resetInactivity,   // ← renamed for clarity
     );
 
     return _buildGameScreen(gameMode, screenProps);
@@ -126,34 +172,36 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget _buildGameScreen(String gameMode, GameScreenProps props) {
     switch (gameMode) {
       case 'read':
-        return ListenModeScreen(props: props);
+        return ListenModeScreen(props: props);   // Note: naming might be swapped?
       case 'listen':
-        return ReadModeScreen(
-          elapsedTime: props.elapsedTime,
-          pauseTimer: props.pauseTimer,
-          resumeTimer: props.resumeTimer,
-          showQuitDialog: props.showQuitDialog,
-          endQuiz: props.endQuiz,
-          sessionTimeLimit: widget.sessionTimeLimit,
-        );
+        return ReadModeScreen(props: props);
       default:
-        return _buildErrorScreen();
+        return Scaffold(
+          body: Center(child: Text('Invalid game mode: $gameMode')),
+        );
     }
   }
+}
 
-  Widget _buildErrorScreen() {
-    final theme = Theme.of(context);
+// ────────────────────────────────────────────────
+//  Props passed to ListenModeScreen & ReadModeScreen
+// ────────────────────────────────────────────────
+class GameScreenProps {
+  final int elapsedTime;
+  final VoidCallback pauseTimer;
+  final VoidCallback resumeTimer;
+  final VoidCallback showQuitDialog;
+  final VoidCallback endQuiz;
+  final int? sessionTimeLimit;
+  final VoidCallback onUserInteraction;   // renamed from onUserInteraction → _resetInactivity
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Unknown Mode')),
-      body: Center(
-        child: Text(
-          'Invalid game mode.',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.error,
-          ),
-        ),
-      ),
-    );
-  }
+  GameScreenProps({
+    required this.elapsedTime,
+    required this.pauseTimer,
+    required this.resumeTimer,
+    required this.showQuitDialog,
+    required this.endQuiz,
+    this.sessionTimeLimit,
+    required this.onUserInteraction,
+  });
 }

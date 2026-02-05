@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Added for orientation lock
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/splash_screen.dart'; // Import the splash screen
-import 'theme_provider.dart';
+import 'providers/theme_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

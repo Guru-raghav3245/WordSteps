@@ -2,29 +2,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-import '../../questions/speech_recog.dart';
-import '/questions/word_generator.dart';
-import 'package:word_app/models/word_game_state.dart';
-import 'confetti_helper.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:word_app/models/word_game_state.dart';
+import 'package:word_app/providers/voice_providers.dart'; // New import for Volume
+import 'package:word_app/questions/speech_recog.dart';
+import 'package:word_app/screens/practice_screen/practice_screen.dart'; // New import for GameScreenProps
+import 'confetti_helper.dart';
+import 'package:word_app/questions/word_generator.dart';
 
 class ReadModeScreen extends ConsumerStatefulWidget {
-  final int elapsedTime;
-  final VoidCallback pauseTimer;
-  final VoidCallback resumeTimer;
-  final VoidCallback showQuitDialog;
-  final VoidCallback endQuiz;
-  final int? sessionTimeLimit;
+  final GameScreenProps props; // Updated to use the shared props object
 
   const ReadModeScreen({
     super.key,
-    required this.elapsedTime,
-    required this.pauseTimer,
-    required this.resumeTimer,
-    required this.showQuitDialog,
-    required this.endQuiz,
-    this.sessionTimeLimit,
+    required this.props,
   });
 
   @override
@@ -110,6 +102,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   }
 
   void _startContinuousSpeechRecognition() async {
+    widget.props.onUserInteraction(); // Reset inactivity timer
     try {
       if (!_speechRecognitionService.isListening) {
         setState(() {
@@ -141,9 +134,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-
       print('Speech recognition exception: $e');
-
       setState(() {
         isListening = false;
         _recognizedWord = 'Error: ${e.toString()}';
@@ -153,13 +144,15 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
   void _debounceProcessSpeechResult(String recognizedWord) {
     _debounceTimer?.cancel();
-
     _debounceTimer = Timer(const Duration(milliseconds: 800), () {
       _processSpeechResult(recognizedWord);
     });
   }
 
   void _processSpeechResult(String recognizedWord) {
+    // Reset inactivity timer when user speaks valid input
+    widget.props.onUserInteraction();
+
     if (_isProcessing ||
         (recognizedWord == _lastProcessedWord &&
             _duplicatePreventionTimer != null)) {
@@ -189,102 +182,99 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
 
-    print('Normalized Recognized: $normalizedRecognized');
-    print('Normalized Correct: $normalizedCorrect');
-
     double similarity = normalizedRecognized.similarityTo(normalizedCorrect);
-    print('Similarity score: $similarity');
-
+    
     bool isCorrect =
         normalizedRecognized.contains(normalizedCorrect) || similarity > 0.6;
 
     if (isCorrect) {
-      print('Correct answer detected! Moving to next question...');
+      _handleCorrectAnswer(correctWord, normalizedRecognized);
+    } else {
+      _handleIncorrectAnswer(recognizedWord);
+    }
+  }
 
-      final previousWord = correctWord;
+  void _handleCorrectAnswer(String previousWord, String recognizedWord) {
+    print('Correct answer detected!');
+    
+    if (_speechRecognitionService.isListening) {
+      _speechRecognitionService.stopListening();
+    }
 
-      if (_speechRecognitionService.isListening) {
-        _speechRecognitionService.stopListening();
+    ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
+    confettiManager.correctConfettiController.play();
+
+    final newState = ref.read(wordGameStateProvider);
+
+    setState(() {
+      _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
+    });
+
+    Future.delayed(Duration(milliseconds: 2000), () async {
+      if (mounted) {
+        if (newState.correctWord != previousWord && isListening) {
+          await Future.delayed(Duration(milliseconds: 500));
+          if (mounted && isListening) {
+            _restartListening();
+          }
+        }
+        setState(() {
+          _recognizedWord = 'Listening...';
+          _isProcessing = false;
+        });
       }
+    });
+  }
 
-      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-      confettiManager.correctConfettiController.play();
+  void _handleIncorrectAnswer(String recognizedWord) {
+    ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
 
-      final newState = ref.read(wordGameStateProvider);
+    final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
+    
+    if (newAttempts >= 2) {
+      confettiManager.wrongConfettiController.play();
+    }
 
+    if (newAttempts >= 3) {
+      _handleMaxAttemptsReached();
+    } else {
       setState(() {
-        _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
+        _recognizedWord = 'Try again: $recognizedWord';
       });
 
-      Future.delayed(Duration(milliseconds: 2000), () async {
+      Future.delayed(Duration(milliseconds: 1500), () {
         if (mounted) {
-          if (newState.correctWord != previousWord && isListening) {
-            print('Word changed from $previousWord to ${newState.correctWord}');
-
-            await Future.delayed(Duration(milliseconds: 500));
-
-            if (mounted && isListening) {
-              try {
-                if (!_speechRecognitionService.isListening) {
-                  await _speechRecognitionService.startContinuousListening(
-                    localeId: _selectedLocaleId,
-                    onResult: (newRecognizedWord) {
-                      if (!mounted || _isProcessing) return;
-
-                      print('New Recognized: $newRecognizedWord');
-
-                      setState(() {
-                        _recognizedWord = newRecognizedWord.isEmpty
-                            ? 'Listening...'
-                            : newRecognizedWord;
-                      });
-
-                      if (newRecognizedWord.isNotEmpty &&
-                          newRecognizedWord != 'Listening...' &&
-                          !_isProcessing) {
-                        _processSpeechResult(newRecognizedWord);
-                      }
-                    },
-                  );
-                }
-              } catch (e) {
-                print('Error restarting speech: $e');
-              }
-            }
-          }
-
+          _isProcessing = false;
           setState(() {
             _recognizedWord = 'Listening...';
-            _isProcessing = false;
           });
         }
       });
-    } else {
-      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
+    }
+  }
 
-      final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
-      print('Incorrect attempt. Current attempts: $newAttempts');
-
-      if (newAttempts >= 2) {
-        confettiManager.wrongConfettiController.play();
-      }
-
-      if (newAttempts >= 3) {
-        _handleMaxAttemptsReached();
-      } else {
-        setState(() {
-          _recognizedWord = 'Try again: $recognizedWord';
-        });
-
-        Future.delayed(Duration(milliseconds: 1500), () {
-          if (mounted) {
-            _isProcessing = false;
+  Future<void> _restartListening() async {
+    try {
+      if (!_speechRecognitionService.isListening) {
+        await _speechRecognitionService.startContinuousListening(
+          localeId: _selectedLocaleId,
+          onResult: (newRecognizedWord) {
+            if (!mounted || _isProcessing) return;
             setState(() {
-              _recognizedWord = 'Listening...';
+              _recognizedWord = newRecognizedWord.isEmpty
+                  ? 'Listening...'
+                  : newRecognizedWord;
             });
-          }
-        });
+            if (newRecognizedWord.isNotEmpty &&
+                newRecognizedWord != 'Listening...' &&
+                !_isProcessing) {
+              _processSpeechResult(newRecognizedWord);
+            }
+          },
+        );
       }
+    } catch (e) {
+      print('Error restarting speech: $e');
     }
   }
 
@@ -305,33 +295,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
         Future.delayed(Duration(milliseconds: 1000), () async {
           if (mounted && isListening) {
-            try {
-              if (!_speechRecognitionService.isListening) {
-                await _speechRecognitionService.startContinuousListening(
-                  localeId: _selectedLocaleId,
-                  onResult: (recognizedWord) {
-                    if (!mounted || _isProcessing) return;
-
-                    print('Continuous Recognized: $recognizedWord');
-
-                    setState(() {
-                      _recognizedWord = recognizedWord.isEmpty
-                          ? 'Listening...'
-                          : recognizedWord;
-                    });
-
-                    if (recognizedWord.isNotEmpty &&
-                        recognizedWord != 'Listening...' &&
-                        !_isProcessing) {
-                      _processSpeechResult(recognizedWord);
-                    }
-                  },
-                );
-              }
-            } catch (e) {
-              print('Error restarting speech after max attempts: $e');
-            }
-
+            await _restartListening();
             setState(() {
               _recognizedWord = 'Listening...';
               _isProcessing = false;
@@ -343,6 +307,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   }
 
   void _stopSpeechRecognition() {
+    widget.props.onUserInteraction(); // Reset inactivity timer
     _speechRecognitionService.stopListening();
     setState(() {
       isListening = false;
@@ -353,8 +318,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
 
   String _formatTime(int seconds) {
     int timeToDisplay = seconds;
-    if (widget.sessionTimeLimit != null) {
-      timeToDisplay = widget.sessionTimeLimit! - seconds;
+    if (widget.props.sessionTimeLimit != null) {
+      timeToDisplay = widget.props.sessionTimeLimit! - seconds;
       if (timeToDisplay < 0) timeToDisplay = 0;
     }
 
@@ -394,6 +359,9 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
                         : _buildPausedContent(theme),
                   ),
                 ),
+                // Volume Control (New Feature)
+                _buildVolumeControl(context, ref, theme),
+                
                 _buildPauseButton(theme, wordGameState),
               ],
             ),
@@ -404,8 +372,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-      ThemeData theme, WordGameState wordGameState) {
+  PreferredSizeWidget _buildAppBar(ThemeData theme, WordGameState wordGameState) {
     return AppBar(
       automaticallyImplyLeading: false,
       title: const Text('Read Mode'),
@@ -418,6 +385,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
             dropdownColor: theme.primaryColor,
             underline: Container(),
             onChanged: (String? newValue) {
+              widget.props.onUserInteraction();
               setState(() {
                 _selectedLocaleId = newValue;
               });
@@ -428,8 +396,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
                 });
               }
             },
-            items:
-                _locales.map<DropdownMenuItem<String>>((stt.LocaleName locale) {
+            items: _locales.map<DropdownMenuItem<String>>((stt.LocaleName locale) {
               return DropdownMenuItem<String>(
                 value: locale.localeId,
                 child: Text(
@@ -457,7 +424,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        _formatTime(widget.elapsedTime),
+        _formatTime(widget.props.elapsedTime),
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onPrimary,
         ),
@@ -470,11 +437,17 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       children: [
         IconButton(
           icon: const Icon(Icons.exit_to_app),
-          onPressed: widget.showQuitDialog,
+          onPressed: () {
+            widget.props.onUserInteraction();
+            widget.props.showQuitDialog();
+          },
         ),
         IconButton(
           icon: const Icon(Icons.check_circle_outline),
-          onPressed: widget.endQuiz,
+          onPressed: () {
+             widget.props.onUserInteraction();
+             widget.props.endQuiz();
+          },
         ),
         const SizedBox(width: 8),
       ],
@@ -532,14 +505,20 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
   }
 
   Widget _buildSpeakerButton(ThemeData theme) {
-    return Card(
-      color: theme.colorScheme.primary.withOpacity(0.1),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          ref.read(wordGameStateProvider).correctWord,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.primary,
+    return GestureDetector(
+      onTap: () {
+        widget.props.onUserInteraction();
+        // Add specific speak logic here if needed
+      },
+      child: Card(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            ref.read(wordGameStateProvider).correctWord,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
           ),
         ),
       ),
@@ -554,17 +533,69 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> {
       ),
     );
   }
+  
+  // New Volume Control Widget
+  Widget _buildVolumeControl(BuildContext context, WidgetRef ref, ThemeData theme) {
+    final volume = ref.watch(volumeProvider);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            volume == 0
+                ? Icons.volume_off
+                : volume < 0.5 ? Icons.volume_down : Icons.volume_up,
+            color: theme.colorScheme.primary,
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: theme.colorScheme.primary,
+                inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.2),
+                thumbColor: theme.colorScheme.primary,
+                overlayColor: theme.colorScheme.primary.withOpacity(0.1),
+              ),
+              child: Slider(
+                value: volume,
+                min: 0.0,
+                max: 1.0,
+                onChanged: (value) {
+                  widget.props.onUserInteraction(); // Reset timer while sliding
+                  ref.read(volumeProvider.notifier).state = value;
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPauseButton(ThemeData theme, WordGameState wordGameState) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 32),
       child: FloatingActionButton(
         onPressed: () {
+          widget.props.onUserInteraction();
           if (wordGameState.isPaused) {
-            widget.resumeTimer();
+            widget.props.resumeTimer();
             ref.read(wordGameStateProvider.notifier).togglePause();
           } else {
-            widget.pauseTimer();
+            widget.props.pauseTimer();
             ref.read(wordGameStateProvider.notifier).togglePause();
           }
         },

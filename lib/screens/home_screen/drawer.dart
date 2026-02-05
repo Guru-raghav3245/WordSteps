@@ -5,7 +5,7 @@ import 'package:word_app/screens/support_screen.dart';
 import 'package:word_app/screens/settings_screen.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
 import 'package:word_app/quiz_history/quiz_history_screen.dart';
-import 'package:word_app/theme_provider.dart';
+import 'package:word_app/providers/theme_provider.dart';
 // Import the new screens
 import '../faq_screen.dart';
 import '../how_to_use_screen.dart';

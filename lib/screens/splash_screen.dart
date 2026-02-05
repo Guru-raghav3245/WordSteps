@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
-import 'package:word_app/theme_provider.dart';
+import 'package:word_app/providers/theme_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});

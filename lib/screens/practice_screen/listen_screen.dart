@@ -5,24 +5,7 @@ import '/questions/word_generator.dart';
 import '/questions/tts_translator.dart';
 import 'confetti_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-class GameScreenProps {
-  final int elapsedTime;
-  final VoidCallback pauseTimer;
-  final VoidCallback resumeTimer;
-  final VoidCallback showQuitDialog;
-  final VoidCallback endQuiz;
-  final int? sessionTimeLimit;
-
-  const GameScreenProps({
-    required this.elapsedTime,
-    required this.pauseTimer,
-    required this.resumeTimer,
-    required this.showQuitDialog,
-    required this.endQuiz,
-    this.sessionTimeLimit,
-  });
-}
+import 'package:word_app/screens/practice_screen/practice_screen.dart';
 
 class ListenModeScreen extends ConsumerStatefulWidget {
   final GameScreenProps props;
