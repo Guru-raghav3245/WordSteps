@@ -24,7 +24,8 @@ class ReadModeScreen extends ConsumerStatefulWidget {
   _ReadModeScreenState createState() => _ReadModeScreenState();
 }
 
-class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProviderStateMixin {
+class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
+    with TickerProviderStateMixin {
   bool isListening = false;
   String _recognizedWord = '';
   late final ConfettiManager confettiManager;
@@ -221,7 +222,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
     ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
 
     final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
-    
+
     if (newAttempts >= 2) {
       confettiManager.wrongConfettiController.play();
     }
@@ -359,12 +360,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
 
                 // --- VOLUME CONTROL ---
                 _buildVolumeControl(context, ref, theme),
-                
+
                 const SizedBox(height: 16),
               ],
             ),
           ),
-          
+
           // --- CONFETTI OVERLAY ---
           IgnorePointer(
             child: Align(
@@ -383,19 +384,21 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
     );
   }
 
-  Widget _buildTopBar(BuildContext context, ThemeData theme, WordGameState wordGameState) {
+  Widget _buildTopBar(
+      BuildContext context, ThemeData theme, WordGameState wordGameState) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Timer (Left)
+          // --- Left Side: Timer ---
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+              border:
+                  Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
             ),
             child: Row(
               children: [
@@ -414,12 +417,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
 
           const SizedBox(width: 8),
 
-          // Right Side Actions
+          // --- Right Side: Actions ---
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Language Dropdown (Compact)
+                // 1. Language Dropdown (Compact)
                 if (_locales.isNotEmpty)
                   Flexible(
                     child: Container(
@@ -428,12 +431,15 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+                        border: Border.all(
+                            color: theme.colorScheme.outline.withOpacity(0.2)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedLocaleId,
-                          icon: Icon(Icons.language, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                          icon: Icon(Icons.language,
+                              size: 18,
+                              color: theme.colorScheme.onSurfaceVariant),
                           isExpanded: false,
                           onChanged: (String? newValue) {
                             widget.props.onUserInteraction();
@@ -442,18 +448,19 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
                             });
                             if (isListening) {
                               _stopSpeechRecognition();
-                              Future.delayed(Duration(milliseconds: 500), () {
+                              Future.delayed(const Duration(milliseconds: 500),
+                                  () {
                                 _startContinuousSpeechRecognition();
                               });
                             }
                           },
-                          items: _locales.map<DropdownMenuItem<String>>((stt.LocaleName locale) {
-                            // Shorten label to avoid overflow (e.g. "en_US")
-                            final shortName = locale.localeId.split('_').last; 
+                          items: _locales.map<DropdownMenuItem<String>>(
+                              (stt.LocaleName locale) {
+                            final shortName = locale.localeId.split('_').last;
                             return DropdownMenuItem<String>(
                               value: locale.localeId,
                               child: Text(
-                                shortName.isEmpty ? "EN" : shortName, 
+                                shortName.isEmpty ? "EN" : shortName,
                                 style: theme.textTheme.bodySmall,
                               ),
                             );
@@ -463,19 +470,29 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
                     ),
                   ),
 
-                const SizedBox(width: 8),
-
-                // Pause Button
+                // 2. FINISH BUTTON (Added Back)
+                // This is the button that takes you to the Result Screen
                 IconButton(
                   onPressed: () {
-                     widget.props.onUserInteraction();
-                     if (wordGameState.isPaused) {
-                       widget.props.resumeTimer();
-                       ref.read(wordGameStateProvider.notifier).togglePause();
-                     } else {
-                       widget.props.pauseTimer();
-                       ref.read(wordGameStateProvider.notifier).togglePause();
-                     }
+                    widget.props.onUserInteraction();
+                    widget.props.endQuiz(); // <--- Navigate to Results
+                  },
+                  icon: Icon(Icons.check_circle,
+                      color: theme.colorScheme.primary),
+                  tooltip: 'Finish Quiz',
+                ),
+
+                // 3. Pause Button
+                IconButton(
+                  onPressed: () {
+                    widget.props.onUserInteraction();
+                    if (wordGameState.isPaused) {
+                      widget.props.resumeTimer();
+                      ref.read(wordGameStateProvider.notifier).togglePause();
+                    } else {
+                      widget.props.pauseTimer();
+                      ref.read(wordGameStateProvider.notifier).togglePause();
+                    }
                   },
                   icon: Icon(
                     wordGameState.isPaused ? Icons.play_arrow : Icons.pause,
@@ -483,7 +500,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
                   ),
                 ),
 
-                // Quit Button
+                // 4. Quit Button (Exits Game)
                 IconButton(
                   onPressed: () {
                     widget.props.onUserInteraction();
@@ -514,7 +531,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
           ),
           textAlign: TextAlign.center,
         ),
-        
+
         const SizedBox(height: 8),
         Text(
           "Read this word aloud",
@@ -529,16 +546,22 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
         ScaleTransition(
           scale: _pulseAnimation,
           child: GestureDetector(
-            onTap: isListening ? _stopSpeechRecognition : _startContinuousSpeechRecognition,
+            onTap: isListening
+                ? _stopSpeechRecognition
+                : _startContinuousSpeechRecognition,
             child: Container(
               width: 140,
               height: 140,
               decoration: BoxDecoration(
-                color: isListening ? Colors.redAccent : theme.colorScheme.primary,
+                color:
+                    isListening ? Colors.redAccent : theme.colorScheme.primary,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: (isListening ? Colors.redAccent : theme.colorScheme.primary).withOpacity(0.4),
+                    color: (isListening
+                            ? Colors.redAccent
+                            : theme.colorScheme.primary)
+                        .withOpacity(0.4),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -568,11 +591,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
                 isListening ? "Listening..." : "Tap mic to start",
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isListening ? Colors.redAccent : theme.colorScheme.primary,
+                  color: isListening
+                      ? Colors.redAccent
+                      : theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 4),
-              if (_recognizedWord.isNotEmpty && _recognizedWord != "Listening...")
+              if (_recognizedWord.isNotEmpty &&
+                  _recognizedWord != "Listening...")
                 Text(
                   "You said: \"$_recognizedWord\"",
                   style: theme.textTheme.bodyMedium,
@@ -585,7 +611,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
         const SizedBox(height: 16),
         Text(
           'Attempts: ${wordGameState.incorrectAttempts}/3',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.outline),
         ),
       ],
     );
@@ -596,7 +623,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.pause_circle_filled, size: 80, color: theme.colorScheme.primary.withOpacity(0.5)),
+          Icon(Icons.pause_circle_filled,
+              size: 80, color: theme.colorScheme.primary.withOpacity(0.5)),
           const SizedBox(height: 16),
           Text('Game Paused', style: theme.textTheme.headlineMedium),
         ],
@@ -604,7 +632,8 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
     );
   }
 
-  Widget _buildVolumeControl(BuildContext context, WidgetRef ref, ThemeData theme) {
+  Widget _buildVolumeControl(
+      BuildContext context, WidgetRef ref, ThemeData theme) {
     final volume = ref.watch(volumeProvider);
 
     return Container(
@@ -625,7 +654,11 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen> with TickerProv
       child: Row(
         children: [
           Icon(
-            volume == 0 ? Icons.volume_off : volume < 0.5 ? Icons.volume_down : Icons.volume_up,
+            volume == 0
+                ? Icons.volume_off
+                : volume < 0.5
+                    ? Icons.volume_down
+                    : Icons.volume_up,
             color: theme.colorScheme.primary,
           ),
           Expanded(
