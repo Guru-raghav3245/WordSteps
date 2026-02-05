@@ -1,4 +1,4 @@
-// File: lib/screens/practice_screen/listen_screen.dart
+// File: lib1/screens/practice_screen/listen_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/questions/word_generator.dart';
@@ -36,8 +36,12 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
-    _speakInitialWord();
-    _volume = ref.read(ttsServiceProvider).volume;
+    
+    // Speak the first word when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakInitialWord();
+      _volume = ref.read(ttsServiceProvider).volume;
+    });
   }
 
   void _speakInitialWord() {
@@ -55,14 +59,14 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   Future<void> _sendReportEmail() async {
-    widget.props.onUserInteraction(); // Activity Reset
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
+    final correctWord = wordGameState.correctWord;
 
     const String email = 'master.guru.raghav@gmail.com';
     const String subject = 'WordSteps Listen Mode Report';
     final String body =
-        'Reported Options:\n${options.map((option) => '- $option').join('\n')}';
+        'Reported Word: $correctWord\nOptions:\n${options.map((option) => '- $option').join('\n')}';
 
     final String gmailUrl =
         'googlegmail:///mail/?to=$email&su=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}';
@@ -90,7 +94,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _handleSpeakTap(ThemeData theme) async {
-    widget.props.onUserInteraction(); // Activity Reset
     if (!_canTap) return;
     setState(() {
       _canTap = false;
@@ -117,13 +120,22 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     }
   }
 
-  void _handleWordSelection(String word) {
-    widget.props.onUserInteraction(); // Activity Reset
-    if (word == ref.read(wordGameStateProvider).correctWord) {
+  // --- UPDATED: HANDLE WRONG ANSWERS ---
+  void _handleWordSelection(String selectedWord) {
+    final correctWord = ref.read(wordGameStateProvider).correctWord;
+    
+    if (selectedWord == correctWord) {
+      // Correct Answer
       confettiManager.correctConfettiController.play();
+      ref.read(wordGameStateProvider.notifier).handleAnswer(selectedWord);
+      _speakNextWord();
+    } else {
+      // Wrong Answer
+      confettiManager.wrongConfettiController.play(); // Play Red Confetti
+      ref.read(wordGameStateProvider.notifier).handleAnswer(selectedWord);
+      
+      _speakNextWord(); 
     }
-    ref.read(wordGameStateProvider.notifier).handleAnswer(word);
-    _speakNextWord();
   }
 
   void _speakNextWord() {
@@ -161,10 +173,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ScaleTransition(
             scale: _scaleAnimation,
             child: ElevatedButton.icon(
-              onPressed: () {
-                widget.props.onUserInteraction();
-                widget.props.showQuitDialog();
-              },
+              onPressed: widget.props.showQuitDialog,
               icon: const Icon(Icons.close, size: 20),
               label: const Text('Quit'),
               style: ElevatedButton.styleFrom(
@@ -182,10 +191,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ScaleTransition(
             scale: _scaleAnimation,
             child: ElevatedButton.icon(
-              onPressed: () {
-                widget.props.onUserInteraction();
-                widget.props.endQuiz();
-              },
+              onPressed: widget.props.endQuiz,
               icon: const Icon(Icons.check, size: 20),
               label: const Text('End'),
               style: ElevatedButton.styleFrom(
@@ -218,7 +224,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         children: [
                           FloatingActionButton(
                             onPressed: () {
-                              widget.props.onUserInteraction(); // Activity Reset
                               ref
                                   .read(wordGameStateProvider.notifier)
                                   .togglePause();
@@ -231,7 +236,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                             backgroundColor: theme.colorScheme.primary,
                             tooltip: 'Pause Game',
                             child: Icon(
-                              wordGameState.isPaused ? Icons.play_arrow : Icons.pause,
+                              Icons.pause,
                               size: 36,
                               color: theme.colorScheme.onPrimary,
                             ),
@@ -439,7 +444,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                           max: 1.0,
                           divisions: 20,
                           onChanged: (value) {
-                            widget.props.onUserInteraction(); // Activity Reset
                             setState(() {
                               _volume = value;
                             });
