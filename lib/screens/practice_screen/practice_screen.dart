@@ -1,4 +1,4 @@
-// File: lib1/screens/practice_screen/practice_screen.dart
+// File: lib/screens/practice_screen/practice_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,9 +44,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     super.dispose();
   }
 
-  // ────────────────────────────────────────────────
-  //  Game Timer (counts elapsed time)
-  // ────────────────────────────────────────────────
   void _startGameTimer() {
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!_isPaused) {
@@ -62,12 +59,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     });
   }
 
-  // ────────────────────────────────────────────────
-  //  Inactivity Logic – single shot timer
-  // ────────────────────────────────────────────────
   void _scheduleInactivityCheck() {
     _inactivityTimer?.cancel();
-
     _inactivityTimer = Timer(
       Duration(seconds: inactivityThresholdSeconds),
       _checkInactivityAndShowModalIfNeeded,
@@ -81,13 +74,22 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final inactiveSeconds = now.difference(_lastInteractionTime).inSeconds;
 
     if (inactiveSeconds >= inactivityThresholdSeconds) {
+      // 1. Pause the timer immediately
+      setState(() {
+        _isPaused = true;
+      });
+
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => InActivityModal(
           onResume: () {
             Navigator.of(dialogContext).pop();
-            _resetInactivity(); // Important: reset after resume
+            // 2. Resume the timer and reset inactivity tracking
+            setState(() {
+              _isPaused = false;
+            });
+            _resetInactivity();
           },
         ),
       );
@@ -96,12 +98,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   void _resetInactivity() {
     _lastInteractionTime = DateTime.now();
-    _scheduleInactivityCheck(); // re-arm the timer
+    _scheduleInactivityCheck();
   }
 
-  // ────────────────────────────────────────────────
-  //  Pause / Resume
-  // ────────────────────────────────────────────────
   void _togglePause() {
     setState(() {
       _isPaused = !_isPaused;
@@ -110,7 +109,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     if (_isPaused) {
       _inactivityTimer?.cancel();
     } else {
-      _resetInactivity(); // restart inactivity watch when resuming
+      _resetInactivity();
     }
   }
 
@@ -119,7 +118,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       context: context,
       builder: (context) => QuitDialog(
         onQuit: () {
-          Navigator.pop(context); // close dialog
+          Navigator.pop(context);
           _navigateToHome();
         },
       ),
@@ -128,7 +127,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   void _navigateToResults() {
     final gameState = ref.read(wordGameStateProvider);
-
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -163,7 +161,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       showQuitDialog: _showQuitDialog,
       endQuiz: _navigateToResults,
       sessionTimeLimit: widget.sessionTimeLimit,
-      onUserInteraction: _resetInactivity,   // ← renamed for clarity
+      onUserInteraction: _resetInactivity,
     );
 
     return _buildGameScreen(gameMode, screenProps);
@@ -172,7 +170,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget _buildGameScreen(String gameMode, GameScreenProps props) {
     switch (gameMode) {
       case 'read':
-        return ListenModeScreen(props: props);   // Note: naming might be swapped?
+        return ListenModeScreen(props: props);
       case 'listen':
         return ReadModeScreen(props: props);
       default:
@@ -183,9 +181,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   }
 }
 
-// ────────────────────────────────────────────────
-//  Props passed to ListenModeScreen & ReadModeScreen
-// ────────────────────────────────────────────────
 class GameScreenProps {
   final int elapsedTime;
   final VoidCallback pauseTimer;
@@ -193,7 +188,7 @@ class GameScreenProps {
   final VoidCallback showQuitDialog;
   final VoidCallback endQuiz;
   final int? sessionTimeLimit;
-  final VoidCallback onUserInteraction;   // renamed from onUserInteraction → _resetInactivity
+  final VoidCallback onUserInteraction;
 
   GameScreenProps({
     required this.elapsedTime,

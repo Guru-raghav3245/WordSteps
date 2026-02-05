@@ -55,7 +55,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   Future<void> _sendReportEmail() async {
-    widget.props.onUserInteraction(); // Reset on report
+    widget.props.onUserInteraction(); // Activity Reset
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
 
@@ -90,7 +90,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _handleSpeakTap(ThemeData theme) async {
-    widget.props.onUserInteraction(); // Reset on speaker tap
+    widget.props.onUserInteraction(); // Activity Reset
     if (!_canTap) return;
     setState(() {
       _canTap = false;
@@ -118,7 +118,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _handleWordSelection(String word) {
-    widget.props.onUserInteraction(); // Reset on option selection
+    widget.props.onUserInteraction(); // Activity Reset
     if (word == ref.read(wordGameStateProvider).correctWord) {
       confettiManager.correctConfettiController.play();
     }
@@ -218,7 +218,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         children: [
                           FloatingActionButton(
                             onPressed: () {
-                              widget.props.onUserInteraction();
+                              widget.props.onUserInteraction(); // Activity Reset
                               ref
                                   .read(wordGameStateProvider.notifier)
                                   .togglePause();
@@ -439,7 +439,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                           max: 1.0,
                           divisions: 20,
                           onChanged: (value) {
-                            widget.props.onUserInteraction(); // Reset on volume change
+                            widget.props.onUserInteraction(); // Activity Reset
                             setState(() {
                               _volume = value;
                             });
