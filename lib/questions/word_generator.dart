@@ -1,3 +1,4 @@
+// File: lib1/questions/word_generator.dart
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_words/english_words.dart';
@@ -83,9 +84,6 @@ class WordGameService {
       throw Exception('No items found for type $contentType');
     }
 
-    print('Generating new round with Content Type: $contentType'); // Debug
-    print('All Items: $allItems'); // Debug
-
     String correctItem = allItems[Random().nextInt(allItems.length)];
     List<String> options = _generateOptions(correctItem, allItems);
 
@@ -138,13 +136,10 @@ class WordGameService {
       }
     }
 
-    // If incorrect and not skipping (empty string), increment attempts and return
-    if (!isCorrect && selectedItem.isNotEmpty) {
-      return currentState.copyWith(
-        incorrectAttempts: currentState.incorrectAttempts + 1,
-      );
-    }
-
+    // --- LOGIC CHANGE: Removed "Retry" block ---
+    // Previously, we returned early if (!isCorrect). 
+    // Now, we proceed to generate a new round immediately.
+    
     int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     int elapsedTime = currentTime - currentState.startTime;
 
@@ -158,7 +153,7 @@ class WordGameService {
       options: newOptions,
       answeredQuestions: [
         ...currentState.answeredQuestions,
-        currentState.correctWord // Store the original correct word
+        currentState.correctWord // Store the original correct word for history
       ],
       answeredCorrectly: [...currentState.answeredCorrectly, isCorrect],
       userSelectedWords: [
