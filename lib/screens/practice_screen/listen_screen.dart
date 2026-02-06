@@ -230,6 +230,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           FloatingActionButton(
+                            heroTag: 'listen_pause_btn',
                             onPressed: () {
                               widget.props.onUserInteraction();
                               ref
@@ -269,6 +270,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                           ),
                           const SizedBox(width: 16),
                           FloatingActionButton(
+                            heroTag: 'listen_report_btn',
                             onPressed: _sendReportEmail,
                             backgroundColor: theme.colorScheme.primary,
                             tooltip: 'Report Options',

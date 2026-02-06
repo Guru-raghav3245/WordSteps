@@ -1,19 +1,18 @@
-// File: lib/screens/practice_screen/read_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
+import '../../questions/speech_recog.dart';
+import '/questions/word_generator.dart';
+import 'package:word_app/models/word_game_state.dart';
+import 'confetti_helper.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:google_fonts/google_fonts.dart';
-import 'package:word_app/models/word_game_state.dart';
 import 'package:word_app/providers/voice_providers.dart';
-import 'package:word_app/questions/speech_recog.dart';
-import 'package:word_app/screens/practice_screen/practice_screen.dart';
-import 'confetti_helper.dart';
-import 'package:word_app/questions/word_generator.dart';
+import 'practice_screen.dart'; 
 
 class ReadModeScreen extends ConsumerStatefulWidget {
-  final GameScreenProps props;
+  final GameScreenProps props; 
 
   const ReadModeScreen({
     super.key,
@@ -21,11 +20,11 @@ class ReadModeScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ReadModeScreen> createState() => _ReadModeScreenState();
+  _ReadModeScreenState createState() => _ReadModeScreenState();
 }
 
 class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   bool isListening = false;
   String _recognizedWord = '';
   late final ConfettiManager confettiManager;
@@ -40,25 +39,30 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   late SpeechRecognitionService _speechRecognitionService;
   Timer? _debounceTimer;
 
-  // Animation controller for the pulsing microphone
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+
+  double _volume = 1.0;
 
   @override
   void initState() {
     super.initState();
     _speechRecognitionService = ref.read(speechRecognitionServiceProvider);
     confettiManager = ConfettiManager();
+
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
+
     _initializeSpeech();
 
-    // Pulse animation setup
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _volume = ref.read(volumeProvider);
+    });
   }
 
   @override
@@ -67,8 +71,42 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     confettiManager.dispose();
     _duplicatePreventionTimer?.cancel();
     _debounceTimer?.cancel();
-    _pulseController.dispose();
+    _scaleController.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendReportEmail() async {
+    widget.props.onUserInteraction(); // Accessing via props
+    final wordGameState = ref.read(wordGameStateProvider);
+    final correctWord = wordGameState.correctWord;
+
+    const String email = 'master.guru.raghav@gmail.com';
+    const String subject = 'WordSteps Read Mode Report';
+    final String body = 'Reported Word: $correctWord';
+
+    final String gmailUrl =
+        'googlegmail:///mail/?to=$email&su=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}';
+    final String fallbackUrl =
+        'mailto:$email?subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(gmailUrl))) {
+        await launchUrl(Uri.parse(gmailUrl));
+      } else {
+        await launchUrl(Uri.parse(fallbackUrl));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Unable to open email client. Please try again or use master.guru.raghav@gmail.com manually.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _initializeSpeech() async {
@@ -91,14 +129,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _recognizedWord = 'Mic Error';
+          _recognizedWord = 'Mic Error: ${e.toString()}';
         });
       }
     }
   }
 
   void _startContinuousSpeechRecognition() async {
-    widget.props.onUserInteraction();
+    widget.props.onUserInteraction(); // Accessing via props
     try {
       if (!_speechRecognitionService.isListening) {
         setState(() {
@@ -107,12 +145,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
           _isProcessing = false;
           _lastProcessedWord = '';
         });
-        _pulseController.repeat(reverse: true); // Start pulsing
 
         await _speechRecognitionService.startContinuousListening(
           localeId: _selectedLocaleId,
           onResult: (recognizedWord) {
             if (!mounted || _isProcessing) return;
+
+            widget.props.onUserInteraction(); // Reset timer on speech
+
             setState(() {
               _recognizedWord =
                   recognizedWord.isEmpty ? 'Listening...' : recognizedWord;
@@ -130,9 +170,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       if (!mounted) return;
       setState(() {
         isListening = false;
-        _pulseController.stop();
-        _pulseController.reset();
-        _recognizedWord = 'Error';
+        _recognizedWord = 'Error: ${e.toString()}';
       });
     }
   }
@@ -145,7 +183,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   }
 
   void _processSpeechResult(String recognizedWord) {
-    widget.props.onUserInteraction();
+    widget.props.onUserInteraction(); // Accessing via props
 
     if (_isProcessing ||
         (recognizedWord == _lastProcessedWord &&
@@ -157,84 +195,87 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     _lastProcessedWord = recognizedWord;
 
     _duplicatePreventionTimer?.cancel();
-    _duplicatePreventionTimer = Timer(const Duration(seconds: 2), () {
+    _duplicatePreventionTimer = Timer(Duration(seconds: 2), () {
       _lastProcessedWord = '';
     });
 
     final currentState = ref.read(wordGameStateProvider);
     final correctWord = currentState.correctWord;
 
-    String normalizedRecognized = recognizedWord
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^\w\s]'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    String normalizedCorrect = correctWord
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^\w\s]'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    String normalizedRecognized =
+        recognizedWord.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '').trim();
+    String normalizedCorrect =
+        correctWord.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '').trim();
 
     double similarity = normalizedRecognized.similarityTo(normalizedCorrect);
     bool isCorrect =
         normalizedRecognized.contains(normalizedCorrect) || similarity > 0.6;
 
     if (isCorrect) {
-      _handleCorrectAnswer(correctWord, normalizedRecognized);
-    } else {
-      _handleIncorrectAnswer(recognizedWord);
-    }
-  }
+      final previousWord = correctWord;
 
-  void _handleCorrectAnswer(String previousWord, String recognizedWord) {
-    if (_speechRecognitionService.isListening) {
-      _speechRecognitionService.stopListening();
-    }
-    _pulseController.stop();
-    _pulseController.reset();
-
-    ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-    confettiManager.correctConfettiController.play();
-
-    final newState = ref.read(wordGameStateProvider);
-
-    setState(() {
-      _recognizedWord = 'Correct!';
-    });
-
-    Future.delayed(const Duration(milliseconds: 2000), () async {
-      if (mounted) {
-        if (newState.correctWord != previousWord && isListening) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted && isListening) {
-            _restartListening();
-          }
-        }
-        setState(() {
-          _recognizedWord = 'Listening...';
-          _isProcessing = false;
-        });
+      if (_speechRecognitionService.isListening) {
+        _speechRecognitionService.stopListening();
       }
-    });
-  }
 
-  void _handleIncorrectAnswer(String recognizedWord) {
-    ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
+      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
+      confettiManager.correctConfettiController.play();
 
-    final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
+      final newState = ref.read(wordGameStateProvider);
 
-    if (newAttempts >= 2) {
-      confettiManager.wrongConfettiController.play();
-    }
-
-    if (newAttempts >= 3) {
-      _handleMaxAttemptsReached();
-    } else {
       setState(() {
-        _recognizedWord = 'Try again';
+        _recognizedWord = 'Correct! Next word: ${newState.correctWord}';
       });
 
-      Future.delayed(const Duration(milliseconds: 1500), () {
+      Future.delayed(Duration(milliseconds: 2000), () async {
+        if (mounted) {
+          if (newState.correctWord != previousWord && isListening) {
+            await Future.delayed(Duration(milliseconds: 500));
+            if (mounted && isListening) {
+              try {
+                if (!_speechRecognitionService.isListening) {
+                  await _speechRecognitionService.startContinuousListening(
+                    localeId: _selectedLocaleId,
+                    onResult: (newRecognizedWord) {
+                      if (!mounted || _isProcessing) return;
+                      widget.props.onUserInteraction();
+                      setState(() {
+                        _recognizedWord = newRecognizedWord.isEmpty
+                            ? 'Listening...'
+                            : newRecognizedWord;
+                      });
+                      if (newRecognizedWord.isNotEmpty &&
+                          newRecognizedWord != 'Listening...' &&
+                          !_isProcessing) {
+                        _processSpeechResult(newRecognizedWord);
+                      }
+                    },
+                  );
+                }
+              } catch (e) {
+                print('Error restarting speech: $e');
+              }
+            }
+          }
+          setState(() {
+            _recognizedWord = 'Listening...';
+            _isProcessing = false;
+          });
+        }
+      });
+    } else {
+      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
+      final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
+
+      if (newAttempts >= 2) {
+        confettiManager.wrongConfettiController.play();
+      }
+
+      setState(() {
+        _recognizedWord = 'Try again: $recognizedWord';
+      });
+
+      Future.delayed(Duration(milliseconds: 1500), () {
         if (mounted) {
           _isProcessing = false;
           setState(() {
@@ -245,65 +286,9 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     }
   }
 
-  Future<void> _restartListening() async {
-    try {
-      if (!_speechRecognitionService.isListening) {
-        _pulseController.repeat(reverse: true);
-        await _speechRecognitionService.startContinuousListening(
-          localeId: _selectedLocaleId,
-          onResult: (newRecognizedWord) {
-            if (!mounted || _isProcessing) return;
-            setState(() {
-              _recognizedWord = newRecognizedWord.isEmpty
-                  ? 'Listening...'
-                  : newRecognizedWord;
-            });
-            if (newRecognizedWord.isNotEmpty &&
-                newRecognizedWord != 'Listening...' &&
-                !_isProcessing) {
-              _processSpeechResult(newRecognizedWord);
-            }
-          },
-        );
-      }
-    } catch (e) {
-      print('Error restarting speech: $e');
-    }
-  }
-
-  void _handleMaxAttemptsReached() {
-    if (_speechRecognitionService.isListening) {
-      _speechRecognitionService.stopListening();
-    }
-    _pulseController.stop();
-    _pulseController.reset();
-
-    setState(() {
-      _recognizedWord = 'Next word...';
-    });
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        ref.read(wordGameStateProvider.notifier).handleAnswer('');
-
-        Future.delayed(const Duration(milliseconds: 1000), () async {
-          if (mounted && isListening) {
-            await _restartListening();
-            setState(() {
-              _recognizedWord = 'Listening...';
-              _isProcessing = false;
-            });
-          }
-        });
-      }
-    });
-  }
-
   void _stopSpeechRecognition() {
     widget.props.onUserInteraction();
     _speechRecognitionService.stopListening();
-    _pulseController.stop();
-    _pulseController.reset();
     setState(() {
       isListening = false;
       _recognizedWord = '';
@@ -317,6 +302,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       timeToDisplay = widget.props.sessionTimeLimit! - seconds;
       if (timeToDisplay < 0) timeToDisplay = 0;
     }
+
     int minutes = timeToDisplay ~/ 60;
     int remainingSeconds = timeToDisplay % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
@@ -333,295 +319,340 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       if (isListening && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           setState(() {
-            _recognizedWord = 'Listening...';
+            _recognizedWord = 'Listening for: ${wordGameState.correctWord}';
           });
         });
       }
     }
 
     return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Read Mode'),
+        centerTitle: false,
+        titleSpacing: 16.0,
+        backgroundColor: theme.colorScheme.primary,
+        actions: [
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                widget.props.onUserInteraction();
+                widget.props.showQuitDialog(); // Accessing via props
+              },
+              icon: const Icon(Icons.close, size: 20),
+              label: const Text('Quit'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                widget.props.onUserInteraction();
+                widget.props.endQuiz(); // Accessing via props
+              },
+              icon: const Icon(Icons.check, size: 20),
+              label: const Text('End'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: Stack(
         children: [
           SafeArea(
-            child: Column(
-              children: [
-                // Custom top bar
-                _buildTopBar(context, theme, wordGameState),
-
-                const Spacer(flex: 1),
-
-                // Main content
-                if (!wordGameState.isPaused)
-                  _buildActiveGameContent(theme, wordGameState)
-                else
-                  _buildPausedContent(theme),
-
-                const Spacer(flex: 2),
-
-                // Volume control
-                _buildVolumeControl(context, ref, theme),
-
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-
-          // Confetti overlays
-          IgnorePointer(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: confettiManager.buildCorrectConfetti(),
-            ),
-          ),
-          IgnorePointer(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: confettiManager.buildWrongConfetti(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopBar(
-      BuildContext context, ThemeData theme, WordGameState wordGameState) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Timer
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.timer, size: 16, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  _formatTime(widget.props.elapsedTime),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Actions
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Language dropdown
-                if (_locales.isNotEmpty)
-                  Flexible(
-                    child: Container(
-                      height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: theme.colorScheme.outline.withOpacity(0.2)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedLocaleId,
-                          icon: Icon(Icons.language,
-                              size: 18,
-                              color: theme.colorScheme.onSurfaceVariant),
-                          isExpanded: false,
-                          onChanged: (String? newValue) {
-                            widget.props.onUserInteraction();
-                            setState(() {
-                              _selectedLocaleId = newValue;
-                            });
-                            if (isListening) {
-                              _stopSpeechRecognition();
-                              Future.delayed(const Duration(milliseconds: 500),
-                                  () {
-                                _startContinuousSpeechRecognition();
-                              });
-                            }
-                          },
-                          items: _locales.map<DropdownMenuItem<String>>(
-                              (stt.LocaleName locale) {
-                            final shortName = locale.localeId.split('_').last;
-                            return DropdownMenuItem<String>(
-                              value: locale.localeId,
+            child: Center(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FloatingActionButton(
+                            heroTag: 'read_pause_btn',
+                            onPressed: () {
+                              ref
+                                  .read(wordGameStateProvider.notifier)
+                                  .togglePause();
+                              if (wordGameState.isPaused) {
+                                widget.props.resumeTimer();
+                              } else {
+                                widget.props.pauseTimer();
+                              }
+                            },
+                            backgroundColor: theme.colorScheme.primary,
+                            tooltip: 'Pause Game',
+                            child: Icon(
+                              Icons.pause,
+                              size: 36,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
                               child: Text(
-                                shortName.isEmpty ? "EN" : shortName,
-                                style: theme.textTheme.bodySmall,
+                                _formatTime(widget
+                                    .props.elapsedTime), // Accessing via props
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 24,
+                                ),
                               ),
-                            );
-                          }).toList(),
-                        ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          FloatingActionButton(
+                            heroTag: 'read_report_btn',
+                            onPressed: _sendReportEmail,
+                            backgroundColor: theme.colorScheme.primary,
+                            tooltip: 'Report Word',
+                            child: Icon(
+                              Icons.report,
+                              size: 36,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-
-                const SizedBox(width: 8),
-
-                // Finish button
-                IconButton(
-                  onPressed: () {
-                    widget.props.onUserInteraction();
-                    widget.props.endQuiz();
-                  },
-                  icon: Icon(Icons.check_circle,
-                      color: theme.colorScheme.primary),
-                  tooltip: 'Finish Quiz',
+                    const SizedBox(height: 16),
+                    if (_locales.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color:
+                                  theme.colorScheme.primary.withOpacity(0.3)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedLocaleId,
+                            icon: Icon(Icons.language,
+                                size: 20, color: theme.colorScheme.primary),
+                            onChanged: (String? newValue) {
+                              widget.props.onUserInteraction();
+                              setState(() {
+                                _selectedLocaleId = newValue;
+                              });
+                              if (isListening) {
+                                _stopSpeechRecognition();
+                                Future.delayed(Duration(milliseconds: 500), () {
+                                  _startContinuousSpeechRecognition();
+                                });
+                              }
+                            },
+                            items: _locales.map<DropdownMenuItem<String>>(
+                                (stt.LocaleName locale) {
+                              return DropdownMenuItem<String>(
+                                value: locale.localeId,
+                                child: Text(
+                                  locale.name,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    if (!wordGameState.isPaused)
+                      Expanded(
+                        child: _buildSpeechContent(theme, wordGameState),
+                      )
+                    else
+                      Expanded(
+                        child: _buildPausedContent(theme),
+                      ),
+                  ],
                 ),
-
-                // Pause / Resume
-                IconButton(
-                  onPressed: () {
-                    widget.props.onUserInteraction();
-                    if (wordGameState.isPaused) {
-                      widget.props.resumeTimer();
-                      ref.read(wordGameStateProvider.notifier).togglePause();
-                    } else {
-                      widget.props.pauseTimer();
-                      ref.read(wordGameStateProvider.notifier).togglePause();
-                    }
-                  },
-                  icon: Icon(
-                    wordGameState.isPaused ? Icons.play_arrow : Icons.pause,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-
-                // Quit
-                IconButton(
-                  onPressed: () {
-                    widget.props.onUserInteraction();
-                    widget.props.showQuitDialog();
-                  },
-                  icon: Icon(Icons.close, color: theme.colorScheme.error),
-                ),
-              ],
+              ),
             ),
           ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.volume_mute,
+                        color: theme.colorScheme.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Slider(
+                        value: _volume,
+                        min: 0.0,
+                        max: 1.0,
+                        divisions: 20,
+                        onChanged: (value) {
+                          setState(() {
+                            _volume = value;
+                          });
+                          ref.read(volumeProvider.notifier).state = value;
+                          widget.props.onUserInteraction();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.volume_up,
+                        color: theme.colorScheme.primary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          _buildConfetti(),
         ],
       ),
     );
   }
 
-  Widget _buildActiveGameContent(ThemeData theme, WordGameState wordGameState) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Target word
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            wordGameState.correctWord,
-            style: GoogleFonts.poppins(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onBackground,
-              letterSpacing: 1.5,
+  Widget _buildSpeechContent(ThemeData theme, WordGameState wordGameState) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildSpeakerButton(theme),
+            const SizedBox(height: 20),
+            Text(
+              'Attempts: ${wordGameState.incorrectAttempts}/3',
+              style: theme.textTheme.bodyMedium,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-        Text(
-          "Read this word aloud",
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-
-        const SizedBox(height: 40),
-
-        // Microphone button
-        ScaleTransition(
-          scale: _pulseAnimation,
-          child: GestureDetector(
-            onTap: () {
-              widget.props.onUserInteraction();
-              isListening
-                  ? _stopSpeechRecognition()
-                  : _startContinuousSpeechRecognition();
-            },
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                color:
-                    isListening ? Colors.redAccent : theme.colorScheme.primary,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: (isListening
-                            ? Colors.redAccent
-                            : theme.colorScheme.primary)
-                        .withOpacity(0.4),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
+            const SizedBox(height: 30),
+            if (!isListening)
+              ElevatedButton.icon(
+                onPressed: _startContinuousSpeechRecognition,
+                icon: const Icon(Icons.mic),
+                label: const Text('Start Listening'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              )
+            else
+              ElevatedButton.icon(
+                onPressed: _stopSpeechRecognition,
+                icon: const Icon(Icons.stop),
+                label: const Text('Stop Listening'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
               ),
-              child: Icon(
-                isListening ? Icons.mic : Icons.mic_none,
-                size: 64,
-                color: Colors.white,
-              ),
+            const SizedBox(height: 20),
+            Text(
+              'You said: $_recognizedWord',
+              style: theme.textTheme.bodyLarge,
+              textAlign: TextAlign.center,
             ),
-          ),
-        ),
-
-        const SizedBox(height: 32),
-
-        // Feedback area
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
+            if (isListening) ...[
+              const SizedBox(height: 20),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 10),
               Text(
-                isListening ? "Listening..." : "Tap mic to start",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isListening
-                      ? Colors.redAccent
-                      : theme.colorScheme.primary,
+                'Speak the word above...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-              const SizedBox(height: 4),
-              if (_recognizedWord.isNotEmpty &&
-                  _recognizedWord != "Listening...")
-                Text(
-                  "You said: \"$_recognizedWord\"",
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpeakerButton(ThemeData theme) {
+    return GestureDetector(
+      onTapDown: (_) => _scaleController.forward(),
+      onTapUp: (_) => _scaleController.reverse(),
+      onTapCancel: () => _scaleController.reverse(),
+      onTap: () {
+        widget.props.onUserInteraction();
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                ref.read(wordGameStateProvider).correctWord,
+                style: theme.textTheme.displaySmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
-
-        const SizedBox(height: 16),
-        Text(
-          'Attempts: ${wordGameState.incorrectAttempts}/3',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.outline),
-        ),
-      ],
+      ),
     );
   }
 
@@ -639,56 +670,22 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     );
   }
 
-  Widget _buildVolumeControl(
-      BuildContext context, WidgetRef ref, ThemeData theme) {
-    final volume = ref.watch(volumeProvider);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildConfetti() {
+    return Stack(
+      children: [
+        IgnorePointer(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: confettiManager.buildCorrectConfetti(),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            volume == 0
-                ? Icons.volume_off
-                : volume < 0.5
-                    ? Icons.volume_down
-                    : Icons.volume_up,
-            color: theme.colorScheme.primary,
+        ),
+        IgnorePointer(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: confettiManager.buildWrongConfetti(),
           ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: theme.colorScheme.primary,
-                inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.2),
-                thumbColor: theme.colorScheme.primary,
-                overlayColor: theme.colorScheme.primary.withOpacity(0.1),
-              ),
-              child: Slider(
-                value: volume,
-                min: 0.0,
-                max: 1.0,
-                onChanged: (value) {
-                  widget.props.onUserInteraction();
-                  ref.read(volumeProvider.notifier).state = value;
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
