@@ -1,10 +1,10 @@
-// File: lib1/screens/practice_screen/read_screen.dart
+// File: lib/screens/practice_screen/read_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:google_fonts/google_fonts.dart'; // Ensure GoogleFonts is imported
+import 'package:google_fonts/google_fonts.dart';
 import 'package:word_app/models/word_game_state.dart';
 import 'package:word_app/providers/voice_providers.dart';
 import 'package:word_app/questions/speech_recog.dart';
@@ -21,7 +21,7 @@ class ReadModeScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  _ReadModeScreenState createState() => _ReadModeScreenState();
+  ConsumerState<ReadModeScreen> createState() => _ReadModeScreenState();
 }
 
 class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
@@ -157,7 +157,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     _lastProcessedWord = recognizedWord;
 
     _duplicatePreventionTimer?.cancel();
-    _duplicatePreventionTimer = Timer(Duration(seconds: 2), () {
+    _duplicatePreventionTimer = Timer(const Duration(seconds: 2), () {
       _lastProcessedWord = '';
     });
 
@@ -202,10 +202,10 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       _recognizedWord = 'Correct!';
     });
 
-    Future.delayed(Duration(milliseconds: 2000), () async {
+    Future.delayed(const Duration(milliseconds: 2000), () async {
       if (mounted) {
         if (newState.correctWord != previousWord && isListening) {
-          await Future.delayed(Duration(milliseconds: 500));
+          await Future.delayed(const Duration(milliseconds: 500));
           if (mounted && isListening) {
             _restartListening();
           }
@@ -234,7 +234,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
         _recognizedWord = 'Try again';
       });
 
-      Future.delayed(Duration(milliseconds: 1500), () {
+      Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           _isProcessing = false;
           setState(() {
@@ -286,7 +286,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       if (mounted) {
         ref.read(wordGameStateProvider.notifier).handleAnswer('');
 
-        Future.delayed(Duration(milliseconds: 1000), () async {
+        Future.delayed(const Duration(milliseconds: 1000), () async {
           if (mounted && isListening) {
             await _restartListening();
             setState(() {
@@ -345,12 +345,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
           SafeArea(
             child: Column(
               children: [
-                // --- CUSTOM TOP BAR (Replaces AppBar to prevent Overflow) ---
+                // Custom top bar
                 _buildTopBar(context, theme, wordGameState),
 
                 const Spacer(flex: 1),
 
-                // --- MAIN CONTENT ---
+                // Main content
                 if (!wordGameState.isPaused)
                   _buildActiveGameContent(theme, wordGameState)
                 else
@@ -358,7 +358,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
 
                 const Spacer(flex: 2),
 
-                // --- VOLUME CONTROL ---
+                // Volume control
                 _buildVolumeControl(context, ref, theme),
 
                 const SizedBox(height: 16),
@@ -366,7 +366,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
             ),
           ),
 
-          // --- CONFETTI OVERLAY ---
+          // Confetti overlays
           IgnorePointer(
             child: Align(
               alignment: Alignment.topCenter,
@@ -391,7 +391,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // --- Left Side: Timer ---
+          // Timer
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -417,12 +417,12 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
 
           const SizedBox(width: 8),
 
-          // --- Right Side: Actions ---
+          // Actions
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // 1. Language Dropdown (Compact)
+                // Language dropdown
                 if (_locales.isNotEmpty)
                   Flexible(
                     child: Container(
@@ -470,19 +470,20 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                     ),
                   ),
 
-                // 2. FINISH BUTTON (Added Back)
-                // This is the button that takes you to the Result Screen
+                const SizedBox(width: 8),
+
+                // Finish button
                 IconButton(
                   onPressed: () {
                     widget.props.onUserInteraction();
-                    widget.props.endQuiz(); // <--- Navigate to Results
+                    widget.props.endQuiz();
                   },
                   icon: Icon(Icons.check_circle,
                       color: theme.colorScheme.primary),
                   tooltip: 'Finish Quiz',
                 ),
 
-                // 3. Pause Button
+                // Pause / Resume
                 IconButton(
                   onPressed: () {
                     widget.props.onUserInteraction();
@@ -500,7 +501,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                   ),
                 ),
 
-                // 4. Quit Button (Exits Game)
+                // Quit
                 IconButton(
                   onPressed: () {
                     widget.props.onUserInteraction();
@@ -520,16 +521,19 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Target Word Display
-        Text(
-          wordGameState.correctWord,
-          style: GoogleFonts.poppins(
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onBackground,
-            letterSpacing: 1.5,
+        // Target word
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            wordGameState.correctWord,
+            style: GoogleFonts.poppins(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onBackground,
+              letterSpacing: 1.5,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
         ),
 
         const SizedBox(height: 8),
@@ -542,13 +546,16 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
 
         const SizedBox(height: 40),
 
-        // Large Microphone Button (Replaces Card)
+        // Microphone button
         ScaleTransition(
           scale: _pulseAnimation,
           child: GestureDetector(
-            onTap: isListening
-                ? _stopSpeechRecognition
-                : _startContinuousSpeechRecognition,
+            onTap: () {
+              widget.props.onUserInteraction();
+              isListening
+                  ? _stopSpeechRecognition()
+                  : _startContinuousSpeechRecognition();
+            },
             child: Container(
               width: 140,
               height: 140,
@@ -578,7 +585,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
 
         const SizedBox(height: 32),
 
-        // Feedback / Status
+        // Feedback area
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           decoration: BoxDecoration(

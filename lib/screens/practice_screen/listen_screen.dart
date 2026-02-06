@@ -25,6 +25,9 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   late Animation<double> _scaleAnimation;
   double _volume = 1.0;
 
+  DateTime? _lastVolumeChange;
+  static const _volumeDebounceMs = 400;
+
   @override
   void initState() {
     super.initState();
@@ -36,8 +39,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
-    
-    // Speak the first word when screen loads
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _speakInitialWord();
       _volume = ref.read(ttsServiceProvider).volume;
@@ -59,6 +61,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   Future<void> _sendReportEmail() async {
+    widget.props.onUserInteraction();
     final wordGameState = ref.read(wordGameStateProvider);
     final options = wordGameState.options;
     final correctWord = wordGameState.correctWord;
@@ -94,6 +97,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   }
 
   void _handleSpeakTap(ThemeData theme) async {
+    widget.props.onUserInteraction();
     if (!_canTap) return;
     setState(() {
       _canTap = false;
@@ -120,21 +124,18 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     }
   }
 
-  // --- UPDATED: HANDLE WRONG ANSWERS ---
   void _handleWordSelection(String selectedWord) {
+    widget.props.onUserInteraction();
     final correctWord = ref.read(wordGameStateProvider).correctWord;
-    
+
     if (selectedWord == correctWord) {
-      // Correct Answer
       confettiManager.correctConfettiController.play();
       ref.read(wordGameStateProvider.notifier).handleAnswer(selectedWord);
       _speakNextWord();
     } else {
-      // Wrong Answer
-      confettiManager.wrongConfettiController.play(); // Play Red Confetti
+      confettiManager.wrongConfettiController.play();
       ref.read(wordGameStateProvider.notifier).handleAnswer(selectedWord);
-      
-      _speakNextWord(); 
+      _speakNextWord();
     }
   }
 
@@ -173,7 +174,10 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ScaleTransition(
             scale: _scaleAnimation,
             child: ElevatedButton.icon(
-              onPressed: widget.props.showQuitDialog,
+              onPressed: () {
+                widget.props.onUserInteraction();
+                widget.props.showQuitDialog();
+              },
               icon: const Icon(Icons.close, size: 20),
               label: const Text('Quit'),
               style: ElevatedButton.styleFrom(
@@ -191,7 +195,10 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
           ScaleTransition(
             scale: _scaleAnimation,
             child: ElevatedButton.icon(
-              onPressed: widget.props.endQuiz,
+              onPressed: () {
+                widget.props.onUserInteraction();
+                widget.props.endQuiz();
+              },
               icon: const Icon(Icons.check, size: 20),
               label: const Text('End'),
               style: ElevatedButton.styleFrom(
@@ -224,6 +231,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                         children: [
                           FloatingActionButton(
                             onPressed: () {
+                              widget.props.onUserInteraction();
                               ref
                                   .read(wordGameStateProvider.notifier)
                                   .togglePause();
@@ -444,10 +452,17 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                           max: 1.0,
                           divisions: 20,
                           onChanged: (value) {
-                            setState(() {
-                              _volume = value;
-                            });
+                            final now = DateTime.now();
+                            if (_lastVolumeChange != null &&
+                                now.difference(_lastVolumeChange!).inMilliseconds <
+                                    _volumeDebounceMs) {
+                              return;
+                            }
+                            _lastVolumeChange = now;
+
+                            setState(() => _volume = value);
                             ref.read(ttsServiceProvider).setVolume(value);
+                            widget.props.onUserInteraction();
                           },
                         ),
                       ),
