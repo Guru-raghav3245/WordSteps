@@ -61,7 +61,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 backgroundColor: Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                 minHeight: 6,
-                borderRadius: BorderRadius.circular(3),
               ),
             ),
             const SizedBox(height: 15),

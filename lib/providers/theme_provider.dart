@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart'; // Import this
 
 class AppTheme {
@@ -26,7 +26,7 @@ class AppTheme {
         ),
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: Colors.white,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -72,7 +72,7 @@ class AppTheme {
         ),
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: Color(0xFF1E1E1E),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

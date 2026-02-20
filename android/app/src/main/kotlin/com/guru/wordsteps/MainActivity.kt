@@ -1,4 +1,4 @@
-package com.example.word_app
+package com.guru.wordsteps
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,5 +1,4 @@
 // File: lib1/questions/word_generator.dart
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:math';
