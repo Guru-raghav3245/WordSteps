@@ -1,4 +1,3 @@
-// File: lib1/screens/home_screen/drawer.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/support_screen.dart';
@@ -6,9 +5,9 @@ import 'package:word_app/screens/settings_screen.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
 import 'package:word_app/quiz_history/quiz_history_screen.dart';
 import 'package:word_app/providers/theme_provider.dart';
-// Import the new screens
 import '../faq_screen.dart';
 import '../how_to_use_screen.dart';
+import 'package:word_app/screens/wrong_answer_history_screen.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -83,6 +82,12 @@ class AppDrawer extends ConsumerWidget {
                       (route) => false,
                     ),
                   )),
+            ),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.history_rounded,
+              title: 'Wrong Answer History',
+              onTap: () => _navigateTo(context, const WrongAnswersScreen()),
             ),
             _buildDrawerItem(
               context: context,

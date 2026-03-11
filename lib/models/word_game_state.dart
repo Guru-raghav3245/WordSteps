@@ -8,6 +8,7 @@ class WordGameState {
   final int elapsedTime;
   final int incorrectAttempts;
   final bool isPaused;
+  final bool isWAQ; // New field for Wrong Answer Question indication
 
   WordGameState({
     required this.correctWord,
@@ -19,6 +20,7 @@ class WordGameState {
     this.elapsedTime = 0,
     this.incorrectAttempts = 0,
     this.isPaused = false,
+    this.isWAQ = false, // Default to false
   });
 
   WordGameState copyWith({
@@ -31,6 +33,7 @@ class WordGameState {
     int? elapsedTime,
     int? incorrectAttempts,
     bool? isPaused,
+    bool? isWAQ, // Added to copyWith
   }) {
     return WordGameState(
       correctWord: correctWord ?? this.correctWord,
@@ -42,6 +45,7 @@ class WordGameState {
       elapsedTime: elapsedTime ?? this.elapsedTime,
       incorrectAttempts: incorrectAttempts ?? this.incorrectAttempts,
       isPaused: isPaused ?? this.isPaused,
+      isWAQ: isWAQ ?? this.isWAQ, // Maintain or update state
     );
   }
 }
