@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 // Moved from SettingsScreen to be accessible globally
 final volumeProvider = StateProvider<double>((ref) => 1.0);
