@@ -54,14 +54,12 @@ class AppDrawer extends ConsumerWidget {
               title: 'Home',
               onTap: () => _navigateTo(context, const HomeScreen()),
             ),
-            // --- NEW ITEM ---
             _buildDrawerItem(
               context: context,
               icon: Icons.help_outline,
               title: 'How to Use',
               onTap: () => _navigateTo(context, const HowToUseScreen()),
             ),
-            // --- NEW ITEM ---
             _buildDrawerItem(
               context: context,
               icon: Icons.question_answer,
