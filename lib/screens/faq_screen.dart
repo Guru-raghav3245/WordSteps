@@ -1,4 +1,3 @@
-// File: lib1/screens/faq_screen.dart
 import 'package:flutter/material.dart';
 
 class FAQItem {

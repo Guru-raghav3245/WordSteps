@@ -1,4 +1,3 @@
-// File: lib1/screens/how_to_use_screen.dart
 import 'package:flutter/material.dart';
 
 class HowToUseScreen extends StatelessWidget {
