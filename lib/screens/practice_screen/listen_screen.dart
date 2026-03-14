@@ -197,6 +197,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -253,66 +254,100 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
+                    // Main Question Card with Integrated WAQ Badge
                     Card(
                       elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            GestureDetector(
-                              onTap: _canTap ? () => _handleSpeakTap(theme) : null,
-                              child: ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: Card(
-                                  elevation: 6,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(20),
-                                    child: _isSpeaking
-                                        ? const SizedBox(
-                                            width: 60,
-                                            height: 60,
-                                            child: CircularProgressIndicator(strokeWidth: 4),
-                                          )
-                                        : Icon(Icons.volume_up, size: 60, color: theme.colorScheme.primary),
-                                  ),
+                      clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Integrated WAQ Badge at the top of the card
+                          if (wordGameState.isWAQ)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.1),
+                                border: Border(
+                                  bottom: BorderSide(color: Colors.redAccent.withOpacity(0.2)),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 32),
-                            Wrap(
-                              spacing: 16,
-                              runSpacing: 16,
-                              alignment: WrapAlignment.center,
-                              children: wordGameState.options.map((word) {
-                                return SizedBox(
-                                  width: MediaQuery.of(context).size.width * 0.8,
-                                  child: ElevatedButton(
-                                    onPressed: () => _handleWordSelection(word),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.primary,
-                                      foregroundColor: theme.colorScheme.onPrimary,
-                                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                                      minimumSize: const Size(0, 60),
-                                    ),
-                                    child: Text(
-                                      word,
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: theme.colorScheme.onPrimary,
-                                        fontSize: 16,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.history, color: Colors.redAccent, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'MISTAKE TO MASTER',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
-                                );
-                              }).toList(),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: _canTap ? () => _handleSpeakTap(theme) : null,
+                                  child: ScaleTransition(
+                                    scale: _scaleAnimation,
+                                    child: Card(
+                                      elevation: 6,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(20),
+                                        child: _isSpeaking
+                                            ? const SizedBox(
+                                                width: 60,
+                                                height: 60,
+                                                child: CircularProgressIndicator(strokeWidth: 4),
+                                              )
+                                            : Icon(Icons.volume_up, size: 60, color: theme.colorScheme.primary),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                Wrap(
+                                  spacing: 16,
+                                  runSpacing: 16,
+                                  alignment: WrapAlignment.center,
+                                  children: wordGameState.options.map((word) {
+                                    return SizedBox(
+                                      width: MediaQuery.of(context).size.width * 0.8,
+                                      child: ElevatedButton(
+                                        onPressed: () => _handleWordSelection(word),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: theme.colorScheme.primary,
+                                          foregroundColor: theme.colorScheme.onPrimary,
+                                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                          minimumSize: const Size(0, 60),
+                                        ),
+                                        child: Text(
+                                          word,
+                                          style: theme.textTheme.bodyLarge?.copyWith(
+                                            color: theme.colorScheme.onPrimary,
+                                            fontSize: 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const Spacer(),
@@ -322,35 +357,7 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
             ),
           ),
 
-          // ==================== WAQ BADGE (from Math app) ====================
-          if (wordGameState.isWAQ)
-            Positioned(
-              top: 100,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black26, blurRadius: 6, offset: const Offset(0, 2)),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.history, color: Colors.white, size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      'Previous Wrong Answer',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // =================================================================
-
+          // Volume Slider
           Positioned(
             left: 16,
             right: 16,
