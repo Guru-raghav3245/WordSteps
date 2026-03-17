@@ -1,10 +1,10 @@
 enum ContentType {
-  kumon7a,
-  kumon6a,
-  kumon5a,
-  kumon4a,
-  kumon3a,
-  kumon2a,
+  basicSV, // was kumon7a
+  descriptive, // was kumon6a
+  cvcSimple, // was kumon5a
+  actionSentences, // was kumon4a
+  natureScene, // was kumon3a
+  narrativeSentences, // was kumon2a
   wordLength3,
   wordLength4,
   wordLength5,
@@ -20,18 +20,18 @@ enum ContentType {
 
   static ContentType fromName(String name) {
     switch (name) {
-      case '7a':
-        return ContentType.kumon7a;
-      case '6a':
-        return ContentType.kumon6a;
-      case '5a':
-        return ContentType.kumon5a;
-      case '4a':
-        return ContentType.kumon4a;
-      case '3a':
-        return ContentType.kumon3a;
-      case '2a':
-        return ContentType.kumon2a;
+      case 'basic_sv':
+        return ContentType.basicSV;
+      case 'descriptive':
+        return ContentType.descriptive;
+      case 'cvc_simple':
+        return ContentType.cvcSimple;
+      case 'action':
+        return ContentType.actionSentences;
+      case 'nature':
+        return ContentType.natureScene;
+      case 'narrative':
+        return ContentType.narrativeSentences;
       case '3':
         return ContentType.wordLength3;
       case '4':
@@ -65,18 +65,18 @@ enum ContentType {
 extension ContentTypeExtension on ContentType {
   String get name {
     switch (this) {
-      case ContentType.kumon7a:
-        return '7a';
-      case ContentType.kumon6a:
-        return '6a';
-      case ContentType.kumon5a:
-        return '5a';
-      case ContentType.kumon4a:
-        return '4a';
-      case ContentType.kumon3a:
-        return '3a';
-      case ContentType.kumon2a:
-        return '2a';
+      case ContentType.basicSV:
+        return 'basic_sv';
+      case ContentType.descriptive:
+        return 'descriptive';
+      case ContentType.cvcSimple:
+        return 'cvc_simple';
+      case ContentType.actionSentences:
+        return 'action';
+      case ContentType.natureScene:
+        return 'nature';
+      case ContentType.narrativeSentences:
+        return 'narrative';
       case ContentType.wordLength3:
         return '3';
       case ContentType.wordLength4:
@@ -106,18 +106,18 @@ extension ContentTypeExtension on ContentType {
 
   String get displayName {
     switch (this) {
-      case ContentType.kumon7a:
-        return '7A Sentences';
-      case ContentType.kumon6a:
-        return '6A Sentences';
-      case ContentType.kumon5a:
-        return '5A Sentences';
-      case ContentType.kumon4a:
-        return '4A Sentences';
-      case ContentType.kumon3a:
-        return '3A Sentences';
-      case ContentType.kumon2a:
-        return '2A Sentences';
+      case ContentType.basicSV:
+        return 'Basic S-V Phrases';
+      case ContentType.descriptive:
+        return 'Descriptive Phrases';
+      case ContentType.cvcSimple:
+        return 'CVC & Simple Sentences';
+      case ContentType.actionSentences:
+        return 'Action Sentences';
+      case ContentType.natureScene:
+        return 'Nature & Scene Sentences';
+      case ContentType.narrativeSentences:
+        return 'Narrative Sentences';
       case ContentType.wordLength3:
         return '3 Letter Words';
       case ContentType.wordLength4:
@@ -142,6 +142,25 @@ extension ContentTypeExtension on ContentType {
         return '13 Letter Words';
       case ContentType.wordLength14:
         return '14 Letter Words';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case ContentType.basicSV:
+        return 'Short, simple actions';
+      case ContentType.descriptive:
+        return 'Sentences with adjectives';
+      case ContentType.cvcSimple:
+        return 'Focus on CVC words';
+      case ContentType.actionSentences:
+        return 'Dynamic verbs & adverbs';
+      case ContentType.natureScene:
+        return 'Nature-themed imagery';
+      case ContentType.narrativeSentences:
+        return 'Longer narrative flows';
+      default:
+        return '';
     }
   }
 }

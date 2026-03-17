@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/questions/content_type.dart';
 
-// --- GAME MODE DROPDOWN ---
 class GameModeDropdown extends ConsumerWidget {
   final String selectedMode;
   final ValueChanged<String> onChanged;
@@ -184,7 +183,6 @@ class _GameModeGridSheet extends StatelessWidget {
   }
 }
 
-// --- CONTENT TYPE DROPDOWN ---
 class ContentTypeDropdown extends ConsumerWidget {
   final ContentType selectedType;
   final ValueChanged<ContentType> onChanged;
@@ -197,11 +195,11 @@ class ContentTypeDropdown extends ConsumerWidget {
 
   Color _getColor(ContentType type) {
     final name = type.name;
-    if (name.contains('a')) return Colors.blue; // Sentences
+    if (name.contains('_') || name == 'narrative' || name == 'action' || name == 'nature' || name == 'descriptive') return Colors.blue; 
     int length = int.tryParse(name) ?? 0;
-    if (length <= 6) return Colors.green; // Short
-    if (length <= 10) return Colors.orange; // Medium
-    return Colors.red; // Long
+    if (length <= 6) return Colors.green; 
+    if (length <= 10) return Colors.orange; 
+    return Colors.red; 
   }
 
   void _showGridSheet(BuildContext context) {
@@ -299,8 +297,8 @@ class _ContentTypeGridSheet extends StatelessWidget {
 
   static const Map<String, List<ContentType>> _groups = {
     'Sentences': [
-      ContentType.kumon7a, ContentType.kumon6a, ContentType.kumon5a,
-      ContentType.kumon4a, ContentType.kumon3a, ContentType.kumon2a,
+      ContentType.basicSV, ContentType.descriptive, ContentType.cvcSimple,
+      ContentType.actionSentences, ContentType.natureScene, ContentType.narrativeSentences,
     ],
     'Short Words (3-6 letters)': [
       ContentType.wordLength3, ContentType.wordLength4, 
@@ -318,7 +316,7 @@ class _ContentTypeGridSheet extends StatelessWidget {
 
   Color _getColor(ContentType type) {
     final name = type.name;
-    if (name.contains('a')) return Colors.blue;
+    if (name.contains('_') || name == 'narrative' || name == 'action' || name == 'nature' || name == 'descriptive') return Colors.blue;
     int length = int.tryParse(name) ?? 0;
     if (length <= 6) return Colors.green;
     if (length <= 10) return Colors.orange;
@@ -377,13 +375,14 @@ class _ContentTypeGridSheet extends StatelessWidget {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.5,
+                        childAspectRatio: 2.2, 
                       ),
                       itemCount: items.length,
                       itemBuilder: (context, i) {
                         final type = items[i];
                         final isSelected = type == selectedType;
                         final color = _getColor(type);
+                        final hasDescription = type.description.isNotEmpty;
 
                         return InkWell(
                           onTap: () => onSelect(type),
@@ -397,14 +396,33 @@ class _ContentTypeGridSheet extends StatelessWidget {
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: isSelected ? color : color.withOpacity(0.3), width: 1.5),
                             ),
-                            child: Text(
-                              type.displayName,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : color,
-                              ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  type.displayName,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: hasDescription ? 12 : 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? Colors.white : color,
+                                  ),
+                                ),
+                                if (hasDescription) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    type.description,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w400,
+                                      color: isSelected ? Colors.white.withOpacity(0.9) : color.withOpacity(0.7),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         );

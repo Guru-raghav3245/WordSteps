@@ -1,5 +1,5 @@
 class EnglishSentences {
-  static const List<String> kumon7aSentences = [
+  static const List<String> basicSVPhrases = [
     "I see a dog.",
     "You have a cat.",
     "We go to school.",
@@ -77,7 +77,7 @@ class EnglishSentences {
     "You read a sign."
   ];
 
-  static const List<String> kumon6aSentences = [
+  static const List<String> descriptivePhrases = [
     "I see a big dog.",
     "You have a small cat.",
     "We go to a new school.",
@@ -155,7 +155,7 @@ class EnglishSentences {
     "You read a clear sign."
   ];
 
-  static const List<String> kumon5aSentences = [
+  static const List<String> cvcSimpleSentences = [
     "The cat sat on a mat.",
     "A big rat hid in a box.",
     "The fat hen ran to Ben.",
@@ -228,7 +228,7 @@ class EnglishSentences {
     "A kid hid behind the tall tree."
   ];
 
-  static const List<String> kumon4aSentences = [
+  static const List<String> actionSentences = [
     "The frog jumped into the cold pond.",
     "She slid down the smooth hill fast.",
     "The black cat sat on the mat.",
@@ -297,7 +297,7 @@ class EnglishSentences {
     "The girl picked berries from the thorny bush."
   ];
 
-  static const List<String> kumon3aSentences = [
+  static const List<String> natureSceneSentences = [
     "The bird flew high above the green trees.",
     "I can see the rainbow in the blue sky.",
     "We went for a ride in the warm sun.",
@@ -364,7 +364,7 @@ class EnglishSentences {
     "The girl painted a picture of a sunny hill."
   ];
 
-  static const List<String> kumon2aSentences = [
+  static const List<String> narrativeSentences = [
     "The dog ran fast to catch the red ball.",
     "We went to the park and played with friends.",
     "Tom likes to ride his bike after school.",

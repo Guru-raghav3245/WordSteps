@@ -16,7 +16,6 @@ class WordGameService {
     'dumb', 'stupid', 'idiot', 'piss', 'shit', 'fuck'
   ];
 
-  // ==================== WRONG ANSWER PRIORITIZATION (from Math app) ====================
   List<WrongAnswer> _pendingWrongAnswers = [];
   List<String> _wrongQuestionsToShowThisSession = [];
   List<String> _shownWrongQuestionsThisSession = [];
@@ -60,7 +59,6 @@ class WordGameService {
     _currentIsWAQ = false;
     return allItems[Random().nextInt(allItems.length)];
   }
-  // ====================================================================================
 
   List<String> _filterBannedWords(List<String> words) {
     return words
@@ -70,12 +68,12 @@ class WordGameService {
 
   List<String> _getSentencesFromList(ContentType contentType) {
     switch (contentType) {
-      case ContentType.kumon7a: return EnglishSentences.kumon7aSentences;
-      case ContentType.kumon6a: return EnglishSentences.kumon6aSentences;
-      case ContentType.kumon5a: return EnglishSentences.kumon5aSentences;
-      case ContentType.kumon4a: return EnglishSentences.kumon4aSentences;
-      case ContentType.kumon3a: return EnglishSentences.kumon3aSentences;
-      case ContentType.kumon2a: return EnglishSentences.kumon2aSentences;
+      case ContentType.basicSV: return EnglishSentences.basicSVPhrases;
+      case ContentType.descriptive: return EnglishSentences.descriptivePhrases;
+      case ContentType.cvcSimple: return EnglishSentences.cvcSimpleSentences;
+      case ContentType.actionSentences: return EnglishSentences.actionSentences;
+      case ContentType.natureScene: return EnglishSentences.natureSceneSentences;
+      case ContentType.narrativeSentences: return EnglishSentences.narrativeSentences;
       case ContentType.wordLength3: return _getAllWordsOfLength(3);
       case ContentType.wordLength4: return _getAllWordsOfLength(4);
       case ContentType.wordLength5: return _getAllWordsOfLength(5);

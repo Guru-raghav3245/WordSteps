@@ -43,7 +43,7 @@ class _FAQScreenState extends State<FAQScreen> {
     FAQItem(
       question: "How do I change the difficulty?",
       answer:
-          "On the Home Screen, use the 'Content Type' dropdown to switch between different word lengths (e.g., 3-letter words) or sentence complexity (e.g., 7A Sentences).",
+          "On the Home Screen, use the 'Content Type' dropdown to switch between different word lengths (e.g., 3-letter words) or sentence complexity (e.g., Narrative Sentences).",
     ),
     FAQItem(
       question: "Does the app save my progress?",
