@@ -6,7 +6,7 @@ class ConfettiManager {
   late final ConfettiController correctConfettiController;
   late final ConfettiController wrongConfettiController;
 
-  // Buzzer-style Red X (big, bold, 1-second dramatic shake)
+  // Buzzer-style Red X (white circle + red X)
   late final AnimationController wrongXController;
   late final Animation<double> scaleAnimation;
   late final Animation<double> rotationAnimation;
@@ -21,24 +21,24 @@ class ConfettiManager {
       duration: const Duration(milliseconds: 1000), // exactly 1 second
     );
 
-    // Bonus version: simple tween + elasticOut (safe, no assertion crash)
+    // Safe elastic pop
     scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: wrongXController,
-        curve: Curves.elasticOut, // big bouncy pop
+        curve: Curves.elasticOut,
       ),
     );
 
-    // Buzzer shake (quick left-right wobble like a talk-show buzzer)
+    // Buzzer shake (talk-show slam)
     rotationAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.26), weight: 8),   // hard left
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.26), weight: 8),
       TweenSequenceItem(tween: Tween(begin: -0.26, end: 0.26), weight: 15),
       TweenSequenceItem(tween: Tween(begin: 0.26, end: -0.16), weight: 12),
       TweenSequenceItem(tween: Tween(begin: -0.16, end: 0.16), weight: 12),
-      TweenSequenceItem(tween: Tween(begin: 0.16, end: 0.0), weight: 53),   // settle
+      TweenSequenceItem(tween: Tween(begin: 0.16, end: 0.0), weight: 53),
     ]).animate(wrongXController);
 
-    // Quick fade-in → hold → fade-out (prominent for full 1 second)
+    // Fade-in → hold → fade-out
     fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 10),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 65),
@@ -55,10 +55,10 @@ class ConfettiManager {
   void playWrongAnimation() {
     wrongXController.reset();
     wrongXController.forward();
-    wrongConfettiController.play(); // ← red confetti now triggers too
+    wrongConfettiController.play();
   }
 
-  // === BIG BOLD BUZZER RED X ===
+  // === BIG BOLD BUZZER: WHITE CIRCLE + RED X ===
   Widget buildWrongX() {
     return AnimatedBuilder(
       animation: wrongXController,
@@ -69,27 +69,30 @@ class ConfettiManager {
             scale: scaleAnimation.value,
             child: Transform.rotate(
               angle: rotationAnimation.value,
-              child: const Icon(
-                Icons.cancel_rounded,          // bolder look than close_rounded
-                size: 240,                     // huge & attention-grabbing
-                color: Color(0xFFE53935),
-                shadows: [
-                  Shadow(
-                    blurRadius: 50,
-                    color: Colors.black54,
-                    offset: Offset(0, 15),
-                  ),
-                  Shadow(
-                    blurRadius: 80,
-                    color: Color(0xFFFF5252),
-                    offset: Offset(0, 0),
-                  ),
-                  Shadow(
-                    blurRadius: 120,
-                    color: Colors.redAccent,
-                    offset: Offset(0, 0),
-                  ),
-                ],
+              child: Container(
+                width: 260,
+                height: 260,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 60,
+                      color: Colors.black54,
+                      offset: const Offset(0, 20),
+                    ),
+                    BoxShadow(
+                      blurRadius: 90,
+                      color: const Color(0xFFFF5252).withOpacity(0.6),
+                      offset: Offset.zero,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 190,                    // thick red X inside white circle
+                  color: Color(0xFFE53935),
+                ),
               ),
             ),
           ),
