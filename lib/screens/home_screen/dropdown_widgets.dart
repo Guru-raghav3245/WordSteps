@@ -110,7 +110,8 @@ class _GameModeGridSheet extends StatelessWidget {
   final String selectedMode;
   final ValueChanged<String> onSelect;
 
-  const _GameModeGridSheet({required this.selectedMode, required this.onSelect});
+  const _GameModeGridSheet(
+      {required this.selectedMode, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +141,10 @@ class _GameModeGridSheet extends StatelessWidget {
           ),
           Text(
             'Select Game Mode',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface),
           ),
           const SizedBox(height: 20),
           Row(
@@ -148,7 +152,7 @@ class _GameModeGridSheet extends StatelessWidget {
             children: modes.map((mode) {
               final isSelected = mode['value'] == selectedMode;
               const color = Colors.deepPurple;
-              
+
               return GestureDetector(
                 onTap: () => onSelect(mode['value'] as String),
                 child: AnimatedContainer(
@@ -158,11 +162,14 @@ class _GameModeGridSheet extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected ? color : color.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isSelected ? color : color.withOpacity(0.3), width: 2),
+                    border: Border.all(
+                        color: isSelected ? color : color.withOpacity(0.3),
+                        width: 2),
                   ),
                   child: Column(
                     children: [
-                      Icon(mode['icon'] as IconData, size: 32, color: isSelected ? Colors.white : color),
+                      Icon(mode['icon'] as IconData,
+                          size: 32, color: isSelected ? Colors.white : color),
                       const SizedBox(height: 8),
                       Text(
                         mode['label'] as String,
@@ -195,11 +202,15 @@ class ContentTypeDropdown extends ConsumerWidget {
 
   Color _getColor(ContentType type) {
     final name = type.name;
-    if (name.contains('_') || name == 'narrative' || name == 'action' || name == 'nature' || name == 'descriptive') return Colors.blue; 
+    if (name.contains('_') ||
+        name == 'narrative' ||
+        name == 'action' ||
+        name == 'nature' ||
+        name == 'descriptive') return Colors.blue;
     int length = int.tryParse(name) ?? 0;
-    if (length <= 6) return Colors.green; 
-    if (length <= 10) return Colors.orange; 
-    return Colors.red; 
+    if (length <= 6) return Colors.green;
+    if (length <= 10) return Colors.orange;
+    return Colors.red;
   }
 
   void _showGridSheet(BuildContext context) {
@@ -293,30 +304,45 @@ class _ContentTypeGridSheet extends StatelessWidget {
   final ContentType selectedType;
   final ValueChanged<ContentType> onSelect;
 
-  const _ContentTypeGridSheet({required this.selectedType, required this.onSelect});
+  const _ContentTypeGridSheet(
+      {required this.selectedType, required this.onSelect});
 
   static const Map<String, List<ContentType>> _groups = {
-    'Sentences': [
-      ContentType.basicSV, ContentType.descriptive, ContentType.cvcSimple,
-      ContentType.actionSentences, ContentType.natureScene, ContentType.narrativeSentences,
-    ],
     'Short Words (3-6 letters)': [
-      ContentType.wordLength3, ContentType.wordLength4, 
-      ContentType.wordLength5, ContentType.wordLength6,
+      ContentType.wordLength3,
+      ContentType.wordLength4,
+      ContentType.wordLength5,
+      ContentType.wordLength6,
     ],
     'Medium Words (7-10 letters)': [
-      ContentType.wordLength7, ContentType.wordLength8, 
-      ContentType.wordLength9, ContentType.wordLength10,
+      ContentType.wordLength7,
+      ContentType.wordLength8,
+      ContentType.wordLength9,
+      ContentType.wordLength10,
     ],
     'Long Words (11-14 letters)': [
-      ContentType.wordLength11, ContentType.wordLength12, 
-      ContentType.wordLength13, ContentType.wordLength14,
+      ContentType.wordLength11,
+      ContentType.wordLength12,
+      ContentType.wordLength13,
+      ContentType.wordLength14,
+    ],
+    'Sentences': [
+      ContentType.basicSV,
+      ContentType.cvcSimple,
+      ContentType.descriptive,
+      ContentType.actionSentences,
+      ContentType.natureScene,
+      ContentType.narrativeSentences,
     ],
   };
 
   Color _getColor(ContentType type) {
     final name = type.name;
-    if (name.contains('_') || name == 'narrative' || name == 'action' || name == 'nature' || name == 'descriptive') return Colors.blue;
+    if (name.contains('_') ||
+        name == 'narrative' ||
+        name == 'action' ||
+        name == 'nature' ||
+        name == 'descriptive') return Colors.blue;
     int length = int.tryParse(name) ?? 0;
     if (length <= 6) return Colors.green;
     if (length <= 10) return Colors.orange;
@@ -328,7 +354,8 @@ class _ContentTypeGridSheet extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -347,7 +374,10 @@ class _ContentTypeGridSheet extends StatelessWidget {
           ),
           Text(
             'Select Content',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface),
           ),
           const SizedBox(height: 10),
           Divider(height: 1, color: theme.dividerColor.withOpacity(0.5)),
@@ -365,17 +395,21 @@ class _ContentTypeGridSheet extends StatelessWidget {
                   children: [
                     Text(
                       groupName,
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.8)),
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface.withOpacity(0.8)),
                     ),
                     const SizedBox(height: 12),
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        mainAxisSpacing: 10,
+                        mainAxisSpacing: 12,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 2.2, 
+                        childAspectRatio: 1.75, // ← Increased height (was 2.2)
                       ),
                       itemCount: items.length,
                       itemBuilder: (context, i) {
@@ -389,12 +423,17 @@ class _ContentTypeGridSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 8), // ← More padding
                             decoration: BoxDecoration(
-                              color: isSelected ? color : color.withOpacity(0.05),
+                              color:
+                                  isSelected ? color : color.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: isSelected ? color : color.withOpacity(0.3), width: 1.5),
+                              border: Border.all(
+                                color:
+                                    isSelected ? color : color.withOpacity(0.3),
+                                width: 1.5,
+                              ),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -409,17 +448,21 @@ class _ContentTypeGridSheet extends StatelessWidget {
                                   ),
                                 ),
                                 if (hasDescription) ...[
-                                  const SizedBox(height: 2),
+                                  const SizedBox(
+                                      height: 4), // ← Slightly more space
                                   Text(
                                     type.description,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w400,
-                                      color: isSelected ? Colors.white.withOpacity(0.9) : color.withOpacity(0.7),
+                                      color: isSelected
+                                          ? Colors.white.withOpacity(0.9)
+                                          : color.withOpacity(0.7),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.visible,
+                                    softWrap: true,
                                   ),
                                 ],
                               ],

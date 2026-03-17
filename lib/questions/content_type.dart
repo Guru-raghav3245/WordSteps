@@ -148,17 +148,17 @@ extension ContentTypeExtension on ContentType {
   String get description {
     switch (this) {
       case ContentType.basicSV:
-        return 'Short, simple actions';
+        return 'Subject-Verb phrases with simple vocabulary';
       case ContentType.descriptive:
-        return 'Sentences with adjectives';
+        return 'Sentences with adjectives and adverbs for richer descriptions';
       case ContentType.cvcSimple:
-        return 'Focus on CVC words';
+        return 'Consonant-vowel-consonant';
       case ContentType.actionSentences:
-        return 'Dynamic verbs & adverbs';
+        return 'Dynamic verbs & adverbs to describe actions';
       case ContentType.natureScene:
-        return 'Nature-themed imagery';
+        return 'Nature-themed imagery and scene descriptions';
       case ContentType.narrativeSentences:
-        return 'Longer narrative flows';
+        return 'Longer narrative flows with varied sentence structures';
       default:
         return '';
     }
