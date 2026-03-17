@@ -17,7 +17,7 @@ class ListenModeScreen extends ConsumerStatefulWidget {
 }
 
 class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {          // ← Changed to TickerProviderStateMixin
   late final ConfettiManager confettiManager;
   bool _isSpeaking = false;
   bool _canTap = true;
@@ -31,7 +31,8 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
   @override
   void initState() {
     super.initState();
-    confettiManager = ConfettiManager();
+    confettiManager = ConfettiManager(this);   // Pass 'this' as TickerProvider
+
     _scaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
@@ -131,8 +132,9 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
     if (selectedWord == correctWord) {
       confettiManager.correctConfettiController.play();
     } else {
-      confettiManager.wrongConfettiController.play();
+      confettiManager.playWrongAnimation();   // ← Triggers animated Red X + red confetti
     }
+
     ref.read(wordGameStateProvider.notifier).handleAnswer(selectedWord);
     _speakNextWord();
   }
@@ -262,7 +264,6 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Integrated WAQ Badge at the top of the card
                           if (wordGameState.isWAQ)
                             Container(
                               width: double.infinity,
@@ -404,13 +405,15 @@ class _ListenModeScreenState extends ConsumerState<ListenModeScreen>
             ),
           ),
 
+          // Confetti
           Align(
             alignment: Alignment.topCenter,
             child: IgnorePointer(child: confettiManager.buildCorrectConfetti()),
           ),
+          // Animated Red X for wrong answers
           Align(
-            alignment: Alignment.topCenter,
-            child: IgnorePointer(child: confettiManager.buildWrongConfetti()),
+            alignment: Alignment.center,
+            child: IgnorePointer(child: confettiManager.buildWrongX()),
           ),
         ],
       ),

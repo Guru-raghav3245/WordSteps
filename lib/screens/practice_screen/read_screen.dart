@@ -1,3 +1,4 @@
+// File: lib/screens/practice_screen/read_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
@@ -7,7 +8,6 @@ import '/questions/word_generator.dart';
 import 'package:word_app/models/word_game_state.dart';
 import 'confetti_helper.dart';
 import 'package:string_similarity/string_similarity.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:word_app/providers/voice_providers.dart';
 import 'practice_screen.dart'; 
 
@@ -20,11 +20,12 @@ class ReadModeScreen extends ConsumerStatefulWidget {
   });
 
   @override
+  
   _ReadModeScreenState createState() => _ReadModeScreenState();
 }
 
 class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {           // ← Changed to TickerProviderStateMixin
   bool isListening = false;
   String _recognizedWord = '';
   late final ConfettiManager confettiManager;
@@ -32,8 +33,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   String _previousWord = '';
   String _lastProcessedWord = '';
   Timer? _duplicatePreventionTimer;
-
-  List<stt.LocaleName> _locales = [];
   String? _selectedLocaleId;
 
   late SpeechRecognitionService _speechRecognitionService;
@@ -48,7 +47,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   void initState() {
     super.initState();
     _speechRecognitionService = ref.read(speechRecognitionServiceProvider);
-    confettiManager = ConfettiManager();
+    confettiManager = ConfettiManager(this);   // Pass 'this' as TickerProvider
 
     _scaleController = AnimationController(
       vsync: this,
@@ -76,7 +75,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   }
 
   Future<void> _sendReportEmail() async {
-    widget.props.onUserInteraction(); // Accessing via props
+    widget.props.onUserInteraction();
     final wordGameState = ref.read(wordGameStateProvider);
     final correctWord = wordGameState.correctWord;
 
@@ -115,7 +114,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       var locales = await _speechRecognitionService.getLocales();
       if (mounted) {
         setState(() {
-          _locales = locales;
           try {
             _selectedLocaleId =
                 locales.firstWhere((l) => l.localeId == 'en_US').localeId;
@@ -136,7 +134,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   }
 
   void _startContinuousSpeechRecognition() async {
-    widget.props.onUserInteraction(); // Accessing via props
+    widget.props.onUserInteraction();
     try {
       if (!_speechRecognitionService.isListening) {
         setState(() {
@@ -151,7 +149,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
           onResult: (recognizedWord) {
             if (!mounted || _isProcessing) return;
 
-            widget.props.onUserInteraction(); // Reset timer on speech
+            widget.props.onUserInteraction();
 
             setState(() {
               _recognizedWord =
@@ -183,7 +181,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   }
 
   void _processSpeechResult(String recognizedWord) {
-    widget.props.onUserInteraction(); // Accessing via props
+    widget.props.onUserInteraction();
 
     if (_isProcessing ||
         (recognizedWord == _lastProcessedWord &&
@@ -264,12 +262,10 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
         }
       });
     } else {
-      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
-      final newAttempts = ref.read(wordGameStateProvider).incorrectAttempts;
+      // Wrong answer → Trigger big animated Red X
+      confettiManager.playWrongAnimation();
 
-      if (newAttempts >= 2) {
-        confettiManager.wrongConfettiController.play();
-      }
+      ref.read(wordGameStateProvider.notifier).handleAnswer(recognizedWord);
 
       setState(() {
         _recognizedWord = 'Try again: $recognizedWord';
@@ -338,7 +334,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
             child: ElevatedButton.icon(
               onPressed: () {
                 widget.props.onUserInteraction();
-                widget.props.showQuitDialog(); // Accessing via props
+                widget.props.showQuitDialog();
               },
               icon: const Icon(Icons.close, size: 20),
               label: const Text('Quit'),
@@ -346,9 +342,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.red,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
             ),
@@ -359,7 +353,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
             child: ElevatedButton.icon(
               onPressed: () {
                 widget.props.onUserInteraction();
-                widget.props.endQuiz(); // Accessing via props
+                widget.props.endQuiz();
               },
               icon: const Icon(Icons.check, size: 20),
               label: const Text('End'),
@@ -367,9 +361,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                 backgroundColor: Colors.white,
                 foregroundColor: theme.colorScheme.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
             ),
@@ -382,8 +374,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
           SafeArea(
             child: Center(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   children: [
                     Padding(
@@ -394,9 +385,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                           FloatingActionButton(
                             heroTag: 'read_pause_btn',
                             onPressed: () {
-                              ref
-                                  .read(wordGameStateProvider.notifier)
-                                  .togglePause();
+                              ref.read(wordGameStateProvider.notifier).togglePause();
                               if (wordGameState.isPaused) {
                                 widget.props.resumeTimer();
                               } else {
@@ -414,14 +403,11 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                           const SizedBox(width: 16),
                           Card(
                             elevation: 4,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                               child: Text(
-                                _formatTime(widget
-                                    .props.elapsedTime), // Accessing via props
+                                _formatTime(widget.props.elapsedTime),
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.w600,
@@ -446,48 +432,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (_locales.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.3)),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedLocaleId,
-                            icon: Icon(Icons.language,
-                                size: 20, color: theme.colorScheme.primary),
-                            onChanged: (String? newValue) {
-                              widget.props.onUserInteraction();
-                              setState(() {
-                                _selectedLocaleId = newValue;
-                              });
-                              if (isListening) {
-                                _stopSpeechRecognition();
-                                Future.delayed(Duration(milliseconds: 500), () {
-                                  _startContinuousSpeechRecognition();
-                                });
-                              }
-                            },
-                            items: _locales.map<DropdownMenuItem<String>>(
-                                (stt.LocaleName locale) {
-                              return DropdownMenuItem<String>(
-                                value: locale.localeId,
-                                child: Text(
-                                  locale.name,
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
                     if (!wordGameState.isPaused)
                       Expanded(
                         child: _buildSpeechContent(theme, wordGameState),
@@ -508,23 +452,17 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
             child: SafeArea(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.volume_mute,
-                        color: theme.colorScheme.primary, size: 20),
+                    Icon(Icons.volume_mute, color: theme.colorScheme.primary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Slider(
@@ -533,17 +471,14 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                         max: 1.0,
                         divisions: 20,
                         onChanged: (value) {
-                          setState(() {
-                            _volume = value;
-                          });
+                          setState(() => _volume = value);
                           ref.read(volumeProvider.notifier).state = value;
                           widget.props.onUserInteraction();
                         },
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.volume_up,
-                        color: theme.colorScheme.primary, size: 20),
+                    Icon(Icons.volume_up, color: theme.colorScheme.primary, size: 20),
                   ],
                 ),
               ),
@@ -578,8 +513,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                 icon: const Icon(Icons.mic),
                 label: const Text('Start Listening'),
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
               )
             else
@@ -590,8 +524,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
               ),
             const SizedBox(height: 20),
@@ -606,9 +539,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
               const SizedBox(height: 10),
               Text(
                 'Speak the word above...',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
               ),
             ],
           ],
@@ -679,10 +610,11 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
             child: confettiManager.buildCorrectConfetti(),
           ),
         ),
+        // Big Animated Red X for wrong answers
         IgnorePointer(
           child: Align(
-            alignment: Alignment.topCenter,
-            child: confettiManager.buildWrongConfetti(),
+            alignment: Alignment.center,
+            child: confettiManager.buildWrongX(),
           ),
         ),
       ],

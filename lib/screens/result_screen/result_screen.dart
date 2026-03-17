@@ -141,55 +141,70 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('Quiz Results'), centerTitle: true),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildStat(Icons.timer, '$minutes:${seconds.toString().padLeft(2, '0')}', 'Time'),
-                          _buildStat(Icons.question_answer, '$totalQuestions', 'Questions'),
-                          _buildStat(Icons.check_circle, '$correctAnswers', 'Correct'),
-                        ],
+        body: Column(
+          children: [
+            // Scrollable content area
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildStat(Icons.timer, '$minutes:${seconds.toString().padLeft(2, '0')}', 'Time'),
+                                _buildStat(Icons.question_answer, '$totalQuestions', 'Questions'),
+                                _buildStat(Icons.check_circle, '$correctAnswers', 'Correct'),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Question Review', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+
+                    // Natural-height list (no more fixed 45% height)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: widget.answeredQuestions.length,
+                      itemBuilder: (context, index) {
+                        final isCorrect = widget.answeredCorrectly[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            leading: Icon(isCorrect ? Icons.check : Icons.close, color: isCorrect ? Colors.green : Colors.red),
+                            title: Text(widget.answeredQuestions[index]),
+                            subtitle: Text('Your Answer: ${widget.userSelectedWords[index]}'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text('Question Review', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.45,
-                child: ListView.builder(
-                  itemCount: widget.answeredQuestions.length,
-                  itemBuilder: (context, index) {
-                    final isCorrect = widget.answeredCorrectly[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: Icon(isCorrect ? Icons.check : Icons.close, color: isCorrect ? Colors.green : Colors.red),
-                        title: Text(widget.answeredQuestions[index]),
-                        subtitle: Text('Your Answer: ${widget.userSelectedWords[index]}'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
+            ),
+
+            // Buttons pinned to the very bottom (no gap!)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              child: Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.share),
                       label: const Text('Share Report'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                       onPressed: _sharePDFReport,
                     ),
                   ),
@@ -198,6 +213,9 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.home),
                       label: const Text('Home'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                       onPressed: () {
                         ref.read(wordGameStateProvider.notifier).clearGameState();
                         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
@@ -206,8 +224,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
