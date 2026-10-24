@@ -1,4 +1,6 @@
 // File: lib/screens/home_screen/home_screen.dart
+import 'package:word_app/questions/speech_recog.dart';
+import 'package:word_app/screens/practice_screen/stt_download_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -72,6 +74,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 selectedMode: ref.watch(gameModeProvider),
                 onChanged: (value) {
                   ref.read(gameModeProvider.notifier).state = value;
+                  // 'listen' is the internal value for Read Mode (labels and values are swapped in this app).
+                  if (value == 'listen') {
+                    offerSpeechModelDownload(
+                        context, ref.read(speechRecognitionServiceProvider));
+                  }
                 },
               ),
 

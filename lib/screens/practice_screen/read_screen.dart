@@ -10,6 +10,7 @@ import 'confetti_helper.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:word_app/providers/voice_providers.dart';
 import 'practice_screen.dart'; 
+import 'stt_download_dialog.dart';
 
 class ReadModeScreen extends ConsumerStatefulWidget {
   final GameScreenProps props; 
@@ -33,7 +34,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   String _previousWord = '';
   String _lastProcessedWord = '';
   Timer? _duplicatePreventionTimer;
-  String? _selectedLocaleId;
 
   late SpeechRecognitionService _speechRecognitionService;
   Timer? _debounceTimer;
@@ -57,6 +57,7 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
 
+    _speechRecognitionService.modelState.addListener(_onModelState);
     _initializeSpeech();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,8 +65,13 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
     });
   }
 
+  void _onModelState() {
+    if (mounted) setState(() {}); // re-evaluates the Start button's enabled state
+  }
+
   @override
   void dispose() {
+    _speechRecognitionService.modelState.removeListener(_onModelState);
     _speechRecognitionService.stopListening();
     confettiManager.dispose();
     _duplicatePreventionTimer?.cancel();
@@ -111,19 +117,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
   Future<void> _initializeSpeech() async {
     try {
       await _speechRecognitionService.initializeSpeech();
-      var locales = await _speechRecognitionService.getLocales();
-      if (mounted) {
-        setState(() {
-          try {
-            _selectedLocaleId =
-                locales.firstWhere((l) => l.localeId == 'en_US').localeId;
-          } catch (e) {
-            if (locales.isNotEmpty) {
-              _selectedLocaleId = locales.first.localeId;
-            }
-          }
-        });
-      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -145,7 +138,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
         });
 
         await _speechRecognitionService.startContinuousListening(
-          localeId: _selectedLocaleId,
           onResult: (recognizedWord) {
             if (!mounted || _isProcessing) return;
 
@@ -233,7 +225,6 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
               try {
                 if (!_speechRecognitionService.isListening) {
                   await _speechRecognitionService.startContinuousListening(
-                    localeId: _selectedLocaleId,
                     onResult: (newRecognizedWord) {
                       if (!mounted || _isProcessing) return;
                       widget.props.onUserInteraction();
@@ -507,13 +498,19 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 30),
+            _buildModelStatus(theme),
             if (!isListening)
               ElevatedButton.icon(
-                onPressed: _startContinuousSpeechRecognition,
+                onPressed: _speechRecognitionService.modelState.value.status ==
+                        SttModelStatus.ready
+                    ? _startContinuousSpeechRecognition
+                    : null,
                 icon: const Icon(Icons.mic),
                 label: const Text('Start Listening'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  disabledForegroundColor: Colors.grey.shade600,
                 ),
               )
             else
@@ -545,6 +542,49 @@ class _ReadModeScreenState extends ConsumerState<ReadModeScreen>
           ],
         ),
       ),
+    );
+  }
+
+  /// Progress while the on-device speech model downloads/loads; retry on failure. Hidden once ready.
+  Widget _buildModelStatus(ThemeData theme) {
+    return ValueListenableBuilder<SttModelState>(
+      valueListenable: _speechRecognitionService.modelState,
+      builder: (context, s, _) {
+        if (s.status == SttModelStatus.ready) return const SizedBox.shrink();
+        final failed = s.status == SttModelStatus.failed;
+        final needsDownload = s.status == SttModelStatus.needsDownload;
+        final label = switch (s.status) {
+          SttModelStatus.needsDownload =>
+            'Speech recognition needs a one-time 50 MB download (uses mobile data if you are not on Wi-Fi).',
+          SttModelStatus.downloading =>
+            'Downloading speech model… ${((s.progress ?? 0) * 100).toStringAsFixed(0)}% (one time only)',
+          SttModelStatus.failed => 'Speech model failed to load: ${s.error ?? ''}',
+          _ => 'Preparing speech model…',
+        };
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Column(
+            children: [
+              if (!failed && !needsDownload) LinearProgressIndicator(value: s.progress),
+              const SizedBox(height: 8),
+              Text(label, textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
+              if (needsDownload || failed)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      _speechRecognitionService.downloadModel().catchError((_) {});
+                      // Inline bar above shows progress here; this adds the "done" confirmation.
+                      trackSpeechModelDownload(context, _speechRecognitionService, withDialog: false);
+                    },
+                    icon: Icon(needsDownload ? Icons.download : Icons.refresh),
+                    label: Text(needsDownload ? 'Download (50 MB)' : 'Retry'),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 

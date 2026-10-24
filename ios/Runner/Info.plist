@@ -49,5 +49,7 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
-	</dict>
+		<key>NSMicrophoneUsageDescription</key>
+	<string>WordSteps listens to you read words aloud. Speech is processed on this device.</string>
+</dict>
 </plist>

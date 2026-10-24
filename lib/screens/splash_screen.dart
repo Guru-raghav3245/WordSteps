@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:word_app/screens/home_screen/home_screen.dart';
 import 'package:word_app/providers/theme_provider.dart';
+import 'package:word_app/questions/speech_recog.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -21,6 +22,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
+    // Start the speech model download/load now so it is ready by the time Read mode opens.
+    ref.read(speechRecognitionServiceProvider).prepare().catchError((_) {});
     await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {

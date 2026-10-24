@@ -6,7 +6,7 @@ publish_to: 'none'
 version: 1.2.0+5
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.12.2
 
 dependencies:
   confetti: ^0.8.0
@@ -26,9 +26,9 @@ dependencies:
   permission_handler: ^12.0.1
   share_plus: ^13.2.0
   shared_preferences: ^2.2.2
-  speech_to_text: ^7.3.0
   string_similarity: ^2.1.1
   timezone: ^0.11.1
+  transcribe_cpp: ^0.1.3
   url_launcher: ^6.1.14
 
 dev_dependencies:
